@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Readiness Audit | Soundness Simulator</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --card-bg: #111;
+            --primary: #00ff41; /* Hacker Green */
+            --danger: #ff3333;
+            --text: #eee;
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text);
+            font-family: var(--font-mono);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            border: 1px solid #333;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            color: var(--primary);
+            letter-spacing: 1px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            background: #000;
+            border: 1px solid #444;
+            color: white;
+            font-family: var(--font-mono);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary);
+            color: black;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        /* Loading Screen */
+        #loading-screen, #result-screen {
+            display: none;
+            text-align: center;
+        }
+
+        .loading-bar {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .progress {
+            width: 0%;
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.5s;
+        }
+
+        .log-text {
+            font-size: 0.8rem;
+            color: #aaa;
+            text-align: left;
+            margin-top: 10px;
+            height: 60px;
+        }
+
+        /* Result Styles */
+        .result-card {
+            border: 1px solid;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .risk-high {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .risk-safe {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed #333;
+            padding: 10px 0;
+            font-size: 0.9rem;
+        }
+        
+        .metric span:last-child {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="input-screen">
+            <h1>🛡️ Institutional Audit</h1>
+            
+            <div class="input-group">
+                <label>1. Operating Jurisdiction</label>
+                <select id="jurisdiction">
+                    <option value="usa">USA (NSA Mandate 2035)</option>
+                    <option value="eu">Europe (EU Mandate 2030)</option>
+                    <option value="global">Global / Unregulated</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>2. Primary Cryptography</label>
+                <select id="crypto">
+                    <option value="legacy">RSA-2048 / ECC (Legacy)</option>
+                    <option value="mixed">Hybrid (Mixed)</option>
+                    <option value="pq">Dilithium / PQ-Native (Soundness)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>3. Custodian Insurance</label>
+                <select id="insurance">
+                    <option value="none">No Specific Coverage</option>
+                    <option value="standard">Standard Theft Only</option>
+                    <option value="pq">Quantum-Risk Coverage</option>
+                </select>
+            </div>
+
+            <button onclick="runAudit()">RUN DIAGNOSTIC_</button>
+        </div>
+
+        <div id="loading-screen">
+            <h1>System Processing...</h1>
+            <div class="loading-bar"><div class="progress" id="progress"></div></div>
+            <div class="log-text" id="log">Initializing...</div>
+        </div>
+
+        <div id="result-screen">
+            <h1 id="result-title">AUDIT COMPLETE</h1>
+            <div id="result-content"></div>
+            <button onclick="location.reload()" style="background: transparent; border: 1px solid #555; color: #fff; margin-top:20px;">RESET SIMULATION</button>
+        </div>
+    </div>
+
+    <script>
+        function runAudit() {
+            // 1. Switch Screens
+            document.getElementById('input-screen').style.display = 'none';
+            document.getElementById('loading-screen').style.display = 'block';
+
+            // 2. Simulate Loading (Hacker Style)
+            const logs = [
+                "Scanning regulatory frameworks...",
+                "Analyzing cryptographic exposure...",
+                "Calculating insurance premiums...",
+                "Simulating capital flight scenarios...",
+                "FINALIZING REPORT..."
+            ];
+            
+            let step = 0;
+            const logEl = document.getElementById('log');
+            const progressEl = document.getElementById('progress');
+
+            const interval = setInterval(() => {
+                if (step >= logs.length) {
+                    clearInterval(interval);
+                    showResult();
+                } else {
+                    logEl.innerText = "> " + logs[step];
+                    progressEl.style.width = ((step + 1) * 20) + "%";
+                    step++;
+                }
+            }, 600); // Speed of simulation
+        }
+
+        function showResult() {
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('result-screen').style.display = 'block';
+
+            // Get Inputs
+            const crypto = document.getElementById('crypto').value;
+            const insurance = document.getElementById('insurance').value;
+            const contentDiv = document.getElementById('result-content');
+            const title = document.getElementById('result-title');
+
+            // Logic from Soundness Article
+            let isSafe = (crypto === 'pq' && insurance === 'pq');
+
+            if (isSafe) {
+                // SAFE SCENARIO
+                title.innerText = "✅ STATUS: CERTIFIED READY";
+                title.style.color = "#00ff41";
+                contentDiv.innerHTML = `
+                    <div class="result-card risk-safe">
+                        <div class="metric"><span>Regulatory Compliance</span> <span>100% (Pass)</span></div>
+                        <div class="metric"><span>Capital Flight Risk</span> <span>LOW</span></div>
+                        <div class="metric"><span>Insurance Premium</span> <span>STABLE</span></div>
+                        <p style="margin-top:15px; font-size:0.8rem;">Your protocol meets 2030/2035 mandates. Institutional capital is secure.</p>
+                    </div>
+                `;
+            } else {
+                // RISK SCENARIO (Default)
+                title.innerText = "🚨 STATUS: HIGH RISK DETECTED";
+                title.style.color = "#ff3333";
+                contentDiv.innerHTML = `
+                    <div class="result-card risk-high">
+                        <div class="metric"><span>Regulatory Status</span> <span>NON-COMPLIANT</span></div>
+                        <div class="metric"><span>Insurance Hike</span> <span>+300% (Proj.)</span></div>
+                        <div class="metric"><span>Capital Flight Risk</span> <span>CRITICAL</span></div>
+                        <p style="margin-top:15px; font-size:0.8rem;">Warning: Legacy encryption (RSA/ECC) puts institutional assets at risk of regulatory freeze.</p>
+                    </div>
+                    <button onclick="window.open('https://dashboard.soundness.xyz/','_blank')" style="background:#333; color:white; border:1px solid #fff;">🛡️ ACTIVATE SOUNDNESS LAYER</button>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
