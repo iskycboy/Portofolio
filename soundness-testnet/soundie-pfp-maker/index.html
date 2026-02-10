@@ -27,7 +27,9 @@
             font-family: 'Outfit', sans-serif;
             margin: 0;
             display: flex;
-            height: 100vh;
+            /* Menggunakan dvh (Dynamic Viewport Height) untuk mobile browser modern */
+            height: 100vh; 
+            height: 100dvh; 
             overflow: hidden;
         }
 
@@ -40,6 +42,8 @@
             flex-direction: column;
             z-index: 20;
             box-shadow: 5px 0 20px rgba(0,0,0,0.2);
+            /* FIX PENTING: Mencegah flex item meluap keluar layar */
+            min-height: 0; 
         }
 
         .header {
@@ -50,6 +54,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            flex-shrink: 0; /* Header jangan menyusut */
         }
 
         .brand-logo {
@@ -73,8 +78,11 @@
             flex: 1;
             overflow-y: auto;
             padding: 20px;
+            /* Scrollbar styling */
             scrollbar-width: thin;
             scrollbar-color: var(--primary) transparent;
+            /* Smooth scroll untuk iOS */
+            -webkit-overflow-scrolling: touch; 
         }
         .scroll-area::-webkit-scrollbar { width: 6px; }
         .scroll-area::-webkit-scrollbar-thumb { background-color: var(--primary); border-radius: 10px; }
@@ -91,6 +99,8 @@
                 radial-gradient(circle at 90% 80%, rgba(34, 211, 238, 0.1) 0%, transparent 20%);
             position: relative;
             padding: 20px;
+            /* FIX: Pastikan preview juga bisa mengecil jika perlu */
+            min-height: 0;
         }
 
         canvas {
@@ -100,7 +110,6 @@
             height: auto;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-            /* Checkerboard pattern for transparency */
             background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%), 
                               linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
                               linear-gradient(45deg, transparent 75%, #1e293b 75%), 
@@ -193,14 +202,46 @@
         .btn-share { background: #000000; color: #fff; border: 1px solid #333; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         .btn-share:hover { transform: scale(1.05); background: #111; border-color: #555; }
 
-        /* Mobile */
+        /* Mobile Responsive Fixes */
         @media (max-width: 900px) {
             body { flex-direction: column; }
-            .preview { flex: 0 0 45vh; padding: 15px; order: 1; border-bottom: 1px solid var(--border); }
-            .controls { width: 100%; flex: 1; order: 2; border-right: none; }
+            
+            .preview { 
+                flex: 0 0 45vh; /* Ambil 45% tinggi layar */
+                padding: 15px; 
+                order: 1; 
+                border-bottom: 1px solid var(--border); 
+            }
+            
+            .controls { 
+                width: 100%; 
+                flex: 1; /* Ambil SISA layar (55%) */
+                order: 2; 
+                border-right: none; 
+                /* FIX PENTING: Pastikan ini bisa di-scroll */
+                min-height: 0; 
+                overflow: hidden; 
+            }
+            
             .header { padding: 15px; text-align: center; }
-            .action-container { position: fixed; bottom: 20px; width: 90%; justify-content: center; gap: 8px; }
-            .action-btn { flex: 1; justify-content: center; padding: 12px 10px; font-size: 0.85rem; gap: 5px; }
+            
+            .action-container { 
+                position: fixed; 
+                bottom: 20px; 
+                width: 90%; 
+                justify-content: center; 
+                gap: 8px; 
+            }
+            
+            .action-btn { 
+                flex: 1; 
+                justify-content: center; 
+                padding: 12px 10px; 
+                font-size: 0.85rem; 
+                gap: 5px; 
+            }
+            
+            /* Sembunyikan scrollbar visual tapi tetap bisa scroll */
             .scroll-area::-webkit-scrollbar { display: none; }
         }
     </style>
@@ -211,7 +252,7 @@
         <div class="header">
             
             <div>
-                <div class="title">Soundie PFP Lab</div>
+                <div class="title">Soundie PFP Maker</div>
                 <div class="subtitle">Build your unique Soundie PFP.</div>
             </div>
         </div>
@@ -240,7 +281,7 @@
                     <a href="https://github.com/SoundnessLabs/soundness-layer" target="_blank" class="link-btn">Testnet</a>
                 </div>
             </div>
-            <div style="height: 100px;"></div>
+            <div style="height: 120px;"></div>
         </div>
     </div>
 
@@ -264,10 +305,7 @@
 
     <script>
         // --- ASSET DATABASE ---
-        // PENTING: Pastikan semua nama file di bawah ini SAMA PERSIS (huruf besar/kecil)
-        // dengan nama file yang ada di GitHub folder kamu.
-        // Contoh: jika di GitHub "Base1.png" tapi disini "base1.png", gambar TIDAK akan muncul.
-        
+        // Pastikan nama file SAMA PERSIS dengan di GitHub (Case Sensitive)
         const ASSETS = {
             base: [
                 { id: 'base1', name: 'Skin 1', img: 'base1.png' },
@@ -395,9 +433,7 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
-        // --- CORE FUNCTIONS (FIXED) ---
-        // Menggunakan relative path langsung ke nama file.
-        // Hapus "crossOrigin" untuk file lokal agar tidak diblokir.
+        // --- CORE FUNCTIONS ---
         function loadImage(src) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -411,7 +447,6 @@
         }
 
         async function draw() {
-            // 1. Draw Background
             const bgVal = state.bg.val || '#0f172a';
             if (bgVal.includes('gradient')) {
                  let grad;
@@ -434,16 +469,8 @@
             }
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 2. Draw Layers
             const layers = [
-                state.base,
-                state.outfit,
-                state.hair,      
-                state.mouth_acc, 
-                state.face_acc,  
-                state.eyebrows,
-                state.head_acc,
-                state.logo
+                state.base, state.outfit, state.hair, state.mouth_acc, state.face_acc, state.eyebrows, state.head_acc, state.logo
             ];
 
             for (const layer of layers) {
@@ -522,10 +549,7 @@
         function download() {
             try {
                 canvas.toBlob(function(blob) {
-                    if (!blob) {
-                        alert("Canvas empty or security error. Please use Live Server.");
-                        return;
-                    }
+                    if (!blob) return alert("Download failed. Use Live Server.");
                     const link = document.createElement('a');
                     link.download = `Soundie_PFP_${Date.now()}.png`;
                     link.href = URL.createObjectURL(blob);
@@ -533,10 +557,7 @@
                     link.click();
                     document.body.removeChild(link);
                 }, 'image/png');
-            } catch (e) {
-                alert("Download failed. If using local file, use Live Server.");
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         async function shareToX() {
@@ -568,5 +589,3 @@
     </script>
 </body>
 </html>
-
-
