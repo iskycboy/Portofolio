@@ -100,6 +100,7 @@
             height: auto;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            /* Checkerboard pattern for transparency */
             background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%), 
                               linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
                               linear-gradient(45deg, transparent 75%, #1e293b 75%), 
@@ -211,7 +212,7 @@
             <img src="soundness_logo.png" alt="Soundness" class="brand-logo" id="brandLogo">
             
             <div>
-                <div class="title">Soundie PFP Maker</div>
+                <div class="title">Soundie PFP Lab</div>
                 <div class="subtitle">Build your unique Soundie PFP.</div>
             </div>
         </div>
@@ -263,13 +264,11 @@
     </div>
 
     <script>
-        // --- CONFIGURATION ---
-        // INI ADALAH URL GITHUB RAW KAMU.
-        // Dengan ini, gambar akan diload langsung dari GitHub, bukan folder relatif.
-        const GITHUB_RAW_URL = "https://raw.githubusercontent.com/iskycboy/Portofolio/main/soundness-testnet/soundie-pfp-maker/";
-
         // --- ASSET DATABASE ---
-        // (Isi data tidak saya ubah, saya hanya merapikan path di fungsi loadImage)
+        // PENTING: Pastikan semua nama file di bawah ini SAMA PERSIS (huruf besar/kecil)
+        // dengan nama file yang ada di GitHub folder kamu.
+        // Contoh: jika di GitHub "Base1.png" tapi disini "base1.png", gambar TIDAK akan muncul.
+        
         const ASSETS = {
             base: [
                 { id: 'base1', name: 'Skin 1', img: 'base1.png' },
@@ -398,28 +397,17 @@
         const ctx = canvas.getContext('2d');
 
         // --- CORE FUNCTIONS (FIXED) ---
-        // UPDATE: Logo Soundness di Header juga pakai Github Raw
-        document.getElementById('brandLogo').src = GITHUB_RAW_URL + 'soundness_logo.png';
-
+        // Menggunakan relative path langsung ke nama file.
+        // Hapus "crossOrigin" untuk file lokal agar tidak diblokir.
         function loadImage(src) {
             return new Promise((resolve) => {
                 const img = new Image();
-                img.crossOrigin = "Anonymous"; // Support CORS
-                
-                // FIX: Jika src adalah path lokal (bukan data: atau http), tambahkan URL GitHub Raw
-                let finalSrc = src;
-                if (!src.startsWith('data:') && !src.startsWith('http')) {
-                    // Hapus ./ jika ada
-                    const cleanPath = src.replace(/^\.\//, '');
-                    finalSrc = GITHUB_RAW_URL + cleanPath;
-                }
-
                 img.onload = () => resolve(img);
                 img.onerror = () => {
-                    console.warn(`Gagal memuat gambar: ${finalSrc}`);
+                    console.error("Gagal memuat:", src);
                     resolve(null);
                 };
-                img.src = finalSrc;
+                img.src = src;
             });
         }
 
@@ -506,25 +494,14 @@
                 if (currentTab === 'bg') {
                     el.innerHTML = `<div class="bg-preview" style="background:${item.val};"></div>`;
                 } else if (item.img) {
-                    // Tampilkan gambar di grid, gunakan fungsi Helper untuk URL
-                    let thumbSrc = item.img;
-                    if (!thumbSrc.startsWith('data:') && !thumbSrc.startsWith('http')) {
-                         const cleanPath = thumbSrc.replace(/^\.\//, '');
-                         thumbSrc = GITHUB_RAW_URL + cleanPath;
-                    }
-                    el.innerHTML = `<img src="${thumbSrc}" loading="lazy">`;
+                    el.innerHTML = `<img src="${item.img}" loading="lazy">`;
                 } else {
                     el.innerHTML = `<span style="font-size:1.5rem; opacity:0.5;">❌</span>`;
                 }
-                
-                // Label nama item
-                if (item.name) {
-                    const label = document.createElement('div');
-                    label.className = 'item-name';
-                    label.innerText = item.name;
-                    el.appendChild(label);
-                }
-
+                const label = document.createElement('div');
+                label.className = 'item-name';
+                label.innerText = item.name;
+                el.appendChild(label);
                 el.onclick = () => selectItem(item);
                 grid.appendChild(el);
             });
@@ -546,7 +523,10 @@
         function download() {
             try {
                 canvas.toBlob(function(blob) {
-                    if (!blob) return alert("Download failed. Use Live Server.");
+                    if (!blob) {
+                        alert("Canvas empty or security error. Please use Live Server.");
+                        return;
+                    }
                     const link = document.createElement('a');
                     link.download = `Soundie_PFP_${Date.now()}.png`;
                     link.href = URL.createObjectURL(blob);
@@ -554,11 +534,14 @@
                     link.click();
                     document.body.removeChild(link);
                 }, 'image/png');
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                alert("Download failed. If using local file, use Live Server.");
+                console.error(e);
+            }
         }
 
         async function shareToX() {
-            const text = encodeURIComponent("Check out my #Soundie PFP! 🐬✨ Created with Soundie PFP Maker.\n\n@SoundnessLabs #SUI");
+            const text = encodeURIComponent("Check out my #Soundie PFP! 🐬✨ Created with Soundie PFP Lab.\n\n@SoundnessLabs #SUI");
             canvas.toBlob(async function(blob) {
                 if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], "soundie.png", { type: "image/png" })] })) {
                     try {
