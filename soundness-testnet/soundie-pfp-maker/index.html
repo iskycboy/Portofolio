@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Soundie Creator Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --accent: #22d3ee;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- LAYOUT RESPONSIVE --- */
+        
+        /* Sidebar (Controls) */
+        .controls {
+            width: 380px;
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 20;
+            box-shadow: 5px 0 20px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .title { 
+            font-weight: 800; 
+            color: var(--accent); 
+            font-size: 1.5rem; 
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+        .subtitle { font-size: 0.85rem; color: var(--text-muted); font-weight: 400; }
+
+        .scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            /* Scrollbar styling */
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) transparent;
+        }
+        .scroll-area::-webkit-scrollbar { width: 6px; }
+        .scroll-area::-webkit-scrollbar-thumb { background-color: var(--primary); border-radius: 10px; }
+
+        /* Preview Area */
+        .preview {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #020617;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(34, 211, 238, 0.1) 0%, transparent 20%);
+            position: relative;
+            padding: 20px;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            /* Checkerboard pattern for transparency */
+            background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%), 
+                              linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #1e293b 75%), 
+                              linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        /* --- COMPONENTS --- */
+
+        /* Tabs */
+        .section-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .tab-group { 
+            display: flex; 
+            gap: 8px; 
+            margin-bottom: 25px; 
+            flex-wrap: wrap; 
+        }
+        
+        .tab-btn {
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 50px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            flex-grow: 1;
+            white-space: nowrap;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .tab-btn.active { 
+            background: var(--primary); 
+            color: white; 
+            border-color: var(--primary); 
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Grid Items */
+        .item-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+            gap: 12px;
+            padding-bottom: 20px;
+        }
+
+        .item-card {
+            aspect-ratio: 1;
+            background: rgba(0,0,0,0.2);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .item-card img { 
+            width: 90%; 
+            height: 90%; 
+            object-fit: contain; 
+            transition: transform 0.2s;
+        }
+        .item-card:hover { 
+            border-color: var(--text-muted); 
+            transform: translateY(-2px);
+        }
+        .item-card:hover img { transform: scale(1.1); }
+        
+        .item-card.selected { 
+            border-color: var(--accent); 
+            background: rgba(34, 211, 238, 0.1);
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.15);
+        }
+
+        .bg-preview { width: 100%; height: 100%; }
+        
+        .item-name {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%;
+            background: rgba(0,0,0,0.85);
+            font-size: 0.65rem;
+            text-align: center;
+            padding: 4px 2px;
+            color: white;
+            backdrop-filter: blur(2px);
+        }
+
+        /* Footer Info & Links */
+        .footer-info {
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+            margin-top: 10px;
+        }
+
+        .credits {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+        }
+        .credits p { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
+        .credits a { color: var(--accent); text-decoration: none; font-weight: 700; }
+        .credits a:hover { text-decoration: underline; }
+
+        .link-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .link-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .link-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* ACTIONS BUTTONS */
+        .action-container {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 30;
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 100px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .action-btn:active { transform: scale(0.95); }
+
+        /* Button Colors */
+        .btn-random {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+        }
+        .btn-random:hover {
+            transform: scale(1.05);
+            background: var(--primary-hover);
+        }
+
+        .btn-dl {
+            background: var(--accent);
+            color: #0f172a;
+            box-shadow: 0 10px 25px rgba(34, 211, 238, 0.4);
+        }
+        .btn-dl:hover {
+            transform: scale(1.05);
+            background: #fff;
+            box-shadow: 0 15px 35px rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-share {
+            background: #000000;
+            color: #fff;
+            border: 1px solid #333;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .btn-share:hover {
+            transform: scale(1.05);
+            background: #111;
+            border-color: #555;
+        }
+
+        /* --- MOBILE RESPONSIVE --- */
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            
+            .preview {
+                flex: 0 0 45vh; /* 45% height for preview */
+                padding: 15px;
+                order: 1; /* Preview on top */
+                border-bottom: 1px solid var(--border);
+            }
+
+            .controls {
+                width: 100%;
+                flex: 1;
+                order: 2; /* Controls below */
+                border-right: none;
+            }
+
+            .header { padding: 15px; text-align: center; }
+            
+            .action-container {
+                position: fixed; /* Stick to bottom on mobile */
+                bottom: 20px;
+                width: 90%;
+                justify-content: center;
+                gap: 8px;
+            }
+            .action-btn {
+                flex: 1;
+                justify-content: center;
+                padding: 12px 10px; /* Smaller padding for mobile to fit 3 buttons */
+                font-size: 0.85rem;
+                gap: 5px;
+            }
+            
+            /* Hide scrollbar on mobile controls for cleaner look */
+            .scroll-area::-webkit-scrollbar { display: none; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <div class="header">
+            <div class="title">Soundie PFP Maker</div>
+            <div class="subtitle">Build your unique Soundie PFP.</div>
+        </div>
+
+        <div class="scroll-area">
+            <div class="section-label">Select Category</div>
+            <div class="tab-group" id="tabs">
+                </div>
+
+            <div class="section-label">Choose Item</div>
+            <div class="item-grid" id="grid">
+                </div>
+            
+            <div class="footer-info">
+                <div class="credits">
+                    <p>Created by <a href="https://x.com/iskycboy" target="_blank">@iskycboy</a></p>
+                    <p>Discord: <span style="color:#fff; font-weight:600;">sky5072</span></p>
+                </div>
+
+                <div class="section-label" style="text-align:center;">Official Links</div>
+                <div class="link-grid">
+                    <a href="https://soundness.xyz/" target="_blank" class="link-btn">Soundness</a>
+                    <a href="https://soundness.xyz/blog" target="_blank" class="link-btn">Blog</a>
+                    <a href="https://linktr.ee/SoundnessLabs" target="_blank" class="link-btn">Linktree</a>
+                    <a href="https://x.com/SoundnessLabs" target="_blank" class="link-btn">Twitter (X)</a>
+                    <a href="https://discord.gg/SoundnessLabs" target="_blank" class="link-btn">Discord</a>
+                    <a href="https://t.me/SoundnessLabs" target="_blank" class="link-btn">Telegram</a>
+                    <a href="https://github.com/SoundnessLabs" target="_blank" class="link-btn">GitHub</a>
+                    <a href="https://github.com/SoundnessLabs/soundness-layer" target="_blank" class="link-btn">Testnet</a>
+                </div>
+            </div>
+
+            <div style="height: 100px;"></div>
+        </div>
+    </div>
+
+    <div class="preview">
+        <canvas id="canvas" width="1000" height="1000"></canvas>
+        
+        <div class="action-container">
+            <button class="action-btn btn-random" onclick="randomize()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 8h.01"></path><path d="M8 8h.01"></path><path d="M8 16h.01"></path><path d="M16 16h.01"></path><path d="M12 12h.01"></path></svg>
+                Random
+            </button>
+
+            <button class="action-btn btn-share" onclick="shareToX()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                Share
+            </button>
+
+            <button class="action-btn btn-dl" onclick="download()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Save
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- ASSET DATABASE ---
+        const ASSETS = {
+            base: [
+                { id: 'base1', name: 'Skin 1', img: 'base1.png' },
+                { id: 'base2', name: 'Skin 2', img: 'base2.png' },
+                { id: 'base3', name: 'Skin 3', img: 'base3.png' },
+                { id: 'base4', name: 'Skin 4', img: 'base4.png' },
+                { id: 'base5', name: 'Skin 5', img: 'base5.png' },
+                { id: 'base6', name: 'Skin 6', img: 'base6.png' }
+            ],
+            bg: [
+                { id: 'dark', name: 'Midnight', val: '#0f172a' },
+                { id: 'cyan', name: 'Sound Cyan', val: '#06b6d4' },
+                { id: 'purple', name: 'Royal', val: '#6366f1' },
+                { id: 'ocean', name: 'Ocean Wave', val: 'linear-gradient(to top, #09203f 0%, #537895 100%)' },
+                { id: 'synth', name: 'Synthwave', val: 'linear-gradient(135deg, #6366f1 0%, #22d3ee 100%)' },
+                { id: 'deep', name: 'Abyss', val: 'radial-gradient(circle at center, #1e293b 0%, #000000 100%)' },
+                { id: 'sunset', name: 'Sunset', val: 'linear-gradient(to top, #f97316 0%, #a855f7 100%)' },
+                { id: 'emerald', name: 'Forest', val: 'linear-gradient(135deg, #064e3b 0%, #10b981 100%)' },
+                { id: 'fire', name: 'Magma', val: 'radial-gradient(circle at center, #991b1b 0%, #2a0a0a 100%)' },
+                { id: 'cotton', name: 'Cotton', val: 'linear-gradient(135deg, #fbcfe8 0%, #a5f3fc 100%)' }
+            ],
+            outfit: [
+                { id: 'none', name: 'None', img: null },
+                { id: 'outfit1', name: 'Outfit1', img: 'outfit1.png' },
+                { id: 'outfit2', name: 'Outfit2', img: 'outfit2.png' },
+                { id: 'outfit3', name: 'Outfit3', img: 'outfit3.png' },
+                { id: 'outfit4', name: 'Outfit4', img: 'outfit4.png' },
+                { id: 'outfit5', name: 'Outfit5', img: 'outfit5.png' },
+                { id: 'outfit6', name: 'Outfit6', img: 'outfit6.png' },
+                { id: 'outfit7', name: 'Outfit7', img: 'outfit7.png' },
+                { id: 'outfit8', name: 'Outfit8', img: 'outfit8.png' },
+                { id: 'outfit9', name: 'Outfit9', img: 'outfit9.png' },
+                { id: 'outfit10', name: 'Outfit10', img: 'outfit10.png' },
+                { id: 'outfit11', name: 'Outfit11', img: 'outfit11.png' },
+                { id: 'outfit12', name: 'Outfit12', img: 'outfit12.png' },
+                { id: 'outfit13', name: 'Outfit13', img: 'outfit13.png' },
+                { id: 'outfit14', name: 'Outfit14', img: 'outfit14.png' },
+                { id: 'outfit15', name: 'Outfit15', img: 'outfit15.png' },
+                { id: 'outfit16', name: 'Outfit16', img: 'outfit16.png' },
+                { id: 'outfit17', name: 'Outfit17', img: 'outfit17.png' },
+                { id: 'outfit18', name: 'Outfit18', img: 'outfit18.png' },
+                { id: 'outfit19', name: 'Outfit19', img: 'outfit19.png' },
+                { id: 'outfit20', name: 'Outfit20', img: 'outfit20.png' },
+                { id: 'outfit21', name: 'Outfit21', img: 'outfit21.png' },
+                { id: 'outfit22', name: 'Outfit22', img: 'outfit22.png' }
+            ],
+            hair: [
+                { id: 'none', name: 'None', img: null },
+                { id: 'hair1', name: 'Style 1', img: 'hair1.png' },
+                { id: 'hair2', name: 'Style 2', img: 'hair2.png' },
+                { id: 'hair3', name: 'Style 3', img: 'hair3.png' },
+                { id: 'hair4', name: 'Style 4', img: 'hair4.png' },
+                { id: 'hair5', name: 'Style 5', img: 'hair5.png' },
+                { id: 'hair6', name: 'Style 6', img: 'hair6.png' },
+                { id: 'hair7', name: 'Style 7', img: 'hair7.png' },
+                { id: 'hair8', name: 'Style 8', img: 'hair8.png' },
+                { id: 'hair9', name: 'Style 9', img: 'hair9.png' },
+                { id: 'hair10', name: 'Style 10', img: 'hair10.png' },
+                { id: 'hair11', name: 'Style 11', img: 'hair11.png' },
+                { id: 'hair12', name: 'Style 12', img: 'hair12.png' },
+                { id: 'hair13', name: 'Style 13', img: 'hair13.png' },
+                { id: 'hair14', name: 'Style 14', img: 'hair14.png' },
+                { id: 'hair15', name: 'Style 15', img: 'hair15.png' },
+                { id: 'hair16', name: 'Style 16', img: 'hair16.png' },
+                { id: 'hair17', name: 'Style 17', img: 'hair17.png' },
+                { id: 'hair18', name: 'Style 18', img: 'hair18.png' },
+                { id: 'hair19', name: 'Style 19', img: 'hair19.png' }
+            ],
+            mouth_acc: [
+                { id: 'none', name: 'None', img: null },
+                { id: 'mouth1', name: 'Mouth 1', img: 'mouth1.png' },
+                { id: 'mouth2', name: 'Mouth 2', img: 'mouth2.png' }
+            ],
+            face_acc: [
+                { id: 'none', name: 'None', img: null },
+                { id: 'glasses1', name: 'Glasses 1', img: 'glasses1.png' },
+                { id: 'glasses2', name: 'Glasses 2', img: 'glasses2.png' }
+            ],
+            eyebrows: [
+                { id: 'none', name: 'None', img: null },
+                { id: 'brow1', name: 'Angry', img: 'brow1.png' },
+                { id: 'brow2', name: 'Sad', img: 'brow2.png' },
+                { id: 'brow3', name: 'Thick', img: 'brow3.png' },
+                { id: 'brow4', name: 'Brow4', img: 'brow4.png' },
+                { id: 'brow5', name: 'Brow5', img: 'brow5.png' },
+                { id: 'brow6', name: 'Brow6', img: 'brow6.png' }
+            ],
+            head_acc: [
+                { id: 'none', name: 'None', img: null },
+                { id: 'head1', name: 'Head1', img: 'head1.png' },
+                { id: 'head2', name: 'Head2', img: 'head2.png' },
+                { id: 'head3', name: 'Head3', img: 'head3.png' },
+                { id: 'head4', name: 'Head4', img: 'head4.png' },
+                { id: 'head5', name: 'Head5', img: 'head5.png' },
+                { id: 'head6', name: 'Head6', img: 'head6.png' },
+                { id: 'head7', name: 'Head7', img: 'head7.png' },
+                { id: 'head8', name: 'Head8', img: 'head8.png' },
+                { id: 'head9', name: 'Head9', img: 'head9.png' },
+                { id: 'head10', name: 'Head10', img: 'head10.png' },
+                { id: 'head11', name: 'Head11', img: 'head11.png' },
+                { id: 'head12', name: 'Head12', img: 'head12.png' }
+            ],
+            logo: [
+                { id: 'none', name: 'None', img: null },
+                { id: 'logo1', name: 'SUI', img: 'logo1.png' },
+                { id: 'logo2', name: 'Faction', img: 'logo2.png' },
+                { id: 'logo3', name: 'Walrus', img: 'logo3.png' }
+            ]
+        };
+
+        // --- STATE ---
+        let state = {
+            base: ASSETS.base[0],
+            bg: ASSETS.bg[0],
+            outfit: ASSETS.outfit[0],
+            hair: ASSETS.hair[0],
+            mouth_acc: ASSETS.mouth_acc[0],
+            face_acc: ASSETS.face_acc[0],
+            eyebrows: ASSETS.eyebrows[0],
+            head_acc: ASSETS.head_acc[0],
+            logo: ASSETS.logo[0]
+        };
+        
+        let currentTab = 'base';
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- CORE FUNCTIONS ---
+        function loadImage(src) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous"; // Add CORS support
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+                img.src = src;
+            });
+        }
+
+        async function draw() {
+            // 1. Draw Background
+            const bgVal = state.bg.val || '#0f172a';
+            // Parse Gradient Strings for Canvas
+            if (bgVal.includes('gradient')) {
+                 let grad;
+                 if (bgVal.includes('linear-gradient(to top')) {
+                     const colors = bgVal.match(/#[0-9a-fA-F]{6}/g) || ['#000', '#fff'];
+                     grad = ctx.createLinearGradient(0, canvas.height, 0, 0);
+                     grad.addColorStop(0, colors[0]); grad.addColorStop(1, colors[1]);
+                 } else if (bgVal.includes('135deg')) {
+                     const colors = bgVal.match(/#[0-9a-fA-F]{6}/g) || ['#000', '#fff'];
+                     grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                     grad.addColorStop(0, colors[0]); grad.addColorStop(1, colors[1]);
+                 } else if (bgVal.includes('radial')) {
+                     const colors = bgVal.match(/#[0-9a-fA-F]{6}/g) || ['#000', '#fff'];
+                     grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 100, canvas.width/2, canvas.height/2, canvas.width/1.5);
+                     grad.addColorStop(0, colors[0]); grad.addColorStop(1, colors[1]);
+                 }
+                 ctx.fillStyle = grad || bgVal;
+            } else {
+                 ctx.fillStyle = bgVal;
+            }
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. Draw Layers
+            // ORDER: Base -> Outfit -> Hair -> Mouth -> Face (Glasses) -> Brows -> Headwear -> Logo
+            const layers = [
+                state.base,
+                state.outfit,
+                state.hair,      
+                state.mouth_acc, 
+                state.face_acc,  
+                state.eyebrows,
+                state.head_acc,
+                state.logo
+            ];
+
+            for (const layer of layers) {
+                if (layer && layer.img) {
+                    const img = await loadImage(layer.img);
+                    if(img) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                }
+            }
+        }
+
+        // --- UI FUNCTIONS ---
+        function setTab(cat) {
+            currentTab = cat;
+            renderTabs();
+            renderGrid();
+        }
+
+        function selectItem(item) {
+            state[currentTab] = item;
+            renderGrid();
+            draw();
+        }
+
+        function renderTabs() {
+            const tabs = [
+                { id: 'base', label: 'SKIN' },
+                { id: 'bg', label: 'BG' },
+                { id: 'outfit', label: 'OUTFIT' },
+                { id: 'hair', label: 'HAIR' },
+                { id: 'mouth_acc', label: 'MOUTH' },
+                { id: 'face_acc', label: 'FACE' },
+                { id: 'eyebrows', label: 'BROWS' },
+                { id: 'head_acc', label: 'HEAD' },
+                { id: 'logo', label: 'LOGO' }
+            ];
+            
+            const container = document.getElementById('tabs');
+            container.innerHTML = '';
+            
+            tabs.forEach(t => {
+                const btn = document.createElement('div');
+                btn.className = `tab-btn ${t.id === currentTab ? 'active' : ''}`;
+                btn.innerText = t.label;
+                btn.onclick = () => setTab(t.id);
+                container.appendChild(btn);
+            });
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+
+            ASSETS[currentTab].forEach(item => {
+                const el = document.createElement('div');
+                const isSelected = state[currentTab].id === item.id;
+                el.className = `item-card ${isSelected ? 'selected' : ''}`;
+                
+                if (currentTab === 'bg') {
+                    el.innerHTML = `<div class="bg-preview" style="background:${item.val};"></div>`;
+                } else if (item.img) {
+                    el.innerHTML = `<img src="${item.img}" loading="lazy">`;
+                } else {
+                    el.innerHTML = `<span style="font-size:1.5rem; opacity:0.5;">❌</span>`;
+                }
+
+                if (item.name) {
+                    const label = document.createElement('div');
+                    label.className = 'item-name';
+                    label.innerText = item.name;
+                    el.appendChild(label);
+                }
+
+                el.onclick = () => selectItem(item);
+                grid.appendChild(el);
+            });
+        }
+
+        // --- NEW: RANDOMIZE FUNCTION ---
+        function randomize() {
+            // List of categories to randomize
+            const categories = ['base', 'bg', 'outfit', 'hair', 'mouth_acc', 'face_acc', 'eyebrows', 'head_acc', 'logo'];
+
+            categories.forEach(cat => {
+                const items = ASSETS[cat];
+                if (items && items.length > 0) {
+                    // Pick a random index
+                    const randomIndex = Math.floor(Math.random() * items.length);
+                    // Update state
+                    state[cat] = items[randomIndex];
+                }
+            });
+
+            // Re-draw canvas and re-render grid (to show selected items)
+            draw();
+            renderGrid();
+        }
+
+        function download() {
+            try {
+                canvas.toBlob(function(blob) {
+                    if (!blob) {
+                        alert("Canvas empty or security error. Please use Live Server.");
+                        return;
+                    }
+                    const link = document.createElement('a');
+                    link.download = `Soundie_PFP_${Date.now()}.png`;
+                    link.href = URL.createObjectURL(blob);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }, 'image/png');
+            } catch (e) {
+                alert("Download failed. If using local file, use Live Server.");
+                console.error(e);
+            }
+        }
+
+        async function shareToX() {
+            const text = encodeURIComponent("Check out my #Soundie PFP! 🐬✨ Created with Soundie Creator.\n\n@SoundnessLabs #SUI");
+            canvas.toBlob(async function(blob) {
+                if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], "soundie.png", { type: "image/png" })] })) {
+                    try {
+                        await navigator.share({
+                            files: [new File([blob], "soundie.png", { type: "image/png" })],
+                            title: 'My Soundie PFP',
+                            text: "Check out my #Soundie PFP! 🐬✨ @SoundnessLabs"
+                        });
+                    } catch (err) { console.log("Share closed"); }
+                } else {
+                    download(); 
+                    setTimeout(() => {
+                        window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+                        alert("Image saved! Please attach it to your tweet manually.");
+                    }, 1000);
+                }
+            }, 'image/png');
+        }
+
+        // Init
+        renderTabs();
+        renderGrid();
+        setTimeout(draw, 100);
+
+    </script>
+</body>
+</html>
