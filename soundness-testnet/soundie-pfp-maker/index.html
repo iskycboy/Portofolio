@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Soundie PFP Maker/title>
+    <title>Soundie Creator Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
@@ -264,6 +264,10 @@
     </div>
 
     <script>
+        // --- ASSET DATABASE ---
+        // PENTING: Pastikan semua nama file di bawah ini SAMA PERSIS (huruf besar/kecil)
+        // dengan nama file yang ada di GitHub folder kamu.
+        // Contoh: jika di GitHub "Base1.png" tapi disini "base1.png", gambar TIDAK akan muncul.
         
         const ASSETS = {
             base: [
@@ -369,8 +373,8 @@
             ],
             logo: [
                 { id: 'none', name: 'None', img: null },
-                { id: 'logo1', name: 'Soundness', img: 'logo1.png' },
-                { id: 'logo2', name: 'SUI', img: 'logo2.png' },
+                { id: 'logo1', name: 'SUI', img: 'logo1.png' },
+                { id: 'logo2', name: 'Faction', img: 'logo2.png' },
                 { id: 'logo3', name: 'Walrus', img: 'logo3.png' }
             ]
         };
@@ -392,6 +396,9 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
+        // --- CORE FUNCTIONS (FIXED) ---
+        // Menggunakan relative path langsung ke nama file.
+        // Hapus "crossOrigin" untuk file lokal agar tidak diblokir.
         function loadImage(src) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -562,4 +569,3 @@
     </script>
 </body>
 </html>
-
