@@ -32,8 +32,6 @@
         }
 
         /* --- LAYOUT RESPONSIVE --- */
-        
-        /* Sidebar (Controls) */
         .controls {
             width: 380px;
             background: var(--panel-bg);
@@ -49,13 +47,24 @@
             border-bottom: 1px solid var(--border);
             background: rgba(30, 41, 59, 0.95);
             backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .brand-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 5px;
         }
 
         .title { 
             font-weight: 800; 
             color: var(--accent); 
-            font-size: 1.5rem; 
-            margin-bottom: 4px;
+            font-size: 1.6rem; 
+            line-height: 1.1;
             letter-spacing: -0.5px;
         }
         .subtitle { font-size: 0.85rem; color: var(--text-muted); font-weight: 400; }
@@ -64,7 +73,6 @@
             flex: 1;
             overflow-y: auto;
             padding: 20px;
-            /* Scrollbar styling */
             scrollbar-width: thin;
             scrollbar-color: var(--primary) transparent;
         }
@@ -92,7 +100,6 @@
             height: auto;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-            /* Checkerboard pattern for transparency */
             background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%), 
                               linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
                               linear-gradient(45deg, transparent 75%, #1e293b 75%), 
@@ -102,8 +109,6 @@
         }
 
         /* --- COMPONENTS --- */
-
-        /* Tabs */
         .section-label {
             font-size: 0.75rem;
             text-transform: uppercase;
@@ -113,256 +118,116 @@
             font-weight: 700;
         }
 
-        .tab-group { 
-            display: flex; 
-            gap: 8px; 
-            margin-bottom: 25px; 
-            flex-wrap: wrap; 
-        }
+        .tab-group { display: flex; gap: 8px; margin-bottom: 25px; flex-wrap: wrap; }
         
         .tab-btn {
-            padding: 10px 16px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            border-radius: 50px;
-            cursor: pointer;
-            text-align: center;
-            font-weight: 600;
-            font-size: 0.8rem;
-            transition: all 0.2s ease;
-            flex-grow: 1;
-            white-space: nowrap;
+            padding: 10px 16px; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+            color: var(--text-muted); border-radius: 50px; cursor: pointer; text-align: center;
+            font-weight: 600; font-size: 0.8rem; transition: all 0.2s ease; flex-grow: 1; white-space: nowrap;
         }
         .tab-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
         .tab-btn.active { 
-            background: var(--primary); 
-            color: white; 
-            border-color: var(--primary); 
+            background: var(--primary); color: white; border-color: var(--primary); 
             box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
         }
 
-        /* Grid Items */
-        .item-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
-            gap: 12px;
-            padding-bottom: 20px;
-        }
+        .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 12px; padding-bottom: 20px; }
 
         .item-card {
-            aspect-ratio: 1;
-            background: rgba(0,0,0,0.2);
-            border: 2px solid var(--border);
-            border-radius: 16px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            position: relative;
+            aspect-ratio: 1; background: rgba(0,0,0,0.2); border: 2px solid var(--border);
+            border-radius: 16px; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; overflow: hidden; position: relative;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .item-card img { 
-            width: 90%; 
-            height: 90%; 
-            object-fit: contain; 
-            transition: transform 0.2s;
-        }
-        .item-card:hover { 
-            border-color: var(--text-muted); 
-            transform: translateY(-2px);
-        }
+        .item-card img { width: 90%; height: 90%; object-fit: contain; transition: transform 0.2s; }
+        .item-card:hover { border-color: var(--text-muted); transform: translateY(-2px); }
         .item-card:hover img { transform: scale(1.1); }
         
         .item-card.selected { 
-            border-color: var(--accent); 
-            background: rgba(34, 211, 238, 0.1);
+            border-color: var(--accent); background: rgba(34, 211, 238, 0.1);
             box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.15);
         }
 
         .bg-preview { width: 100%; height: 100%; }
         
         .item-name {
-            position: absolute;
-            bottom: 0; left: 0; width: 100%;
-            background: rgba(0,0,0,0.85);
-            font-size: 0.65rem;
-            text-align: center;
-            padding: 4px 2px;
-            color: white;
-            backdrop-filter: blur(2px);
+            position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.85);
+            font-size: 0.65rem; text-align: center; padding: 4px 2px; color: white; backdrop-filter: blur(2px);
         }
 
-        /* Footer Info & Links */
-        .footer-info {
-            border-top: 1px solid var(--border);
-            padding-top: 20px;
-            margin-top: 10px;
-        }
-
-        .credits {
-            background: rgba(0,0,0,0.2);
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            margin-bottom: 15px;
-            border: 1px solid var(--border);
-        }
+        /* Footer */
+        .footer-info { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 10px; }
+        .credits { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px; border: 1px solid var(--border); }
         .credits p { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
         .credits a { color: var(--accent); text-decoration: none; font-weight: 700; }
         .credits a:hover { text-decoration: underline; }
 
-        .link-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
-        }
-
+        .link-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
         .link-btn {
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 12px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 0.75rem;
-            font-weight: 600;
-            transition: all 0.2s;
+            display: inline-flex; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted);
+            text-decoration: none; font-size: 0.75rem; font-weight: 600; transition: all 0.2s;
         }
-        .link-btn:hover {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-            transform: translateY(-2px);
-        }
+        .link-btn:hover { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-2px); }
 
-        /* ACTIONS BUTTONS */
+        /* Action Buttons */
         .action-container {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 30;
-            display: flex;
-            gap: 10px;
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 30; display: flex; gap: 10px;
         }
 
         .action-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 14px 24px;
-            border: none;
-            border-radius: 100px;
-            font-weight: 800;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex; align-items: center; gap: 8px; padding: 14px 24px;
+            border: none; border-radius: 100px; font-weight: 800; font-size: 0.95rem;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
         }
         .action-btn:active { transform: scale(0.95); }
 
-        /* Button Colors */
-        .btn-random {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
-        }
-        .btn-random:hover {
-            transform: scale(1.05);
-            background: var(--primary-hover);
-        }
+        .btn-random { background: var(--primary); color: white; box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4); }
+        .btn-random:hover { transform: scale(1.05); background: var(--primary-hover); }
 
-        .btn-dl {
-            background: var(--accent);
-            color: #0f172a;
-            box-shadow: 0 10px 25px rgba(34, 211, 238, 0.4);
-        }
-        .btn-dl:hover {
-            transform: scale(1.05);
-            background: #fff;
-            box-shadow: 0 15px 35px rgba(255, 255, 255, 0.3);
-        }
+        .btn-dl { background: var(--accent); color: #0f172a; box-shadow: 0 10px 25px rgba(34, 211, 238, 0.4); }
+        .btn-dl:hover { transform: scale(1.05); background: #fff; box-shadow: 0 15px 35px rgba(255, 255, 255, 0.3); }
 
-        .btn-share {
-            background: #000000;
-            color: #fff;
-            border: 1px solid #333;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-        .btn-share:hover {
-            transform: scale(1.05);
-            background: #111;
-            border-color: #555;
-        }
+        .btn-share { background: #000000; color: #fff; border: 1px solid #333; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .btn-share:hover { transform: scale(1.05); background: #111; border-color: #555; }
 
-        /* --- MOBILE RESPONSIVE --- */
+        /* Mobile */
         @media (max-width: 900px) {
             body { flex-direction: column; }
-            
-            .preview {
-                flex: 0 0 45vh; /* 45% height for preview */
-                padding: 15px;
-                order: 1; /* Preview on top */
-                border-bottom: 1px solid var(--border);
-            }
-
-            .controls {
-                width: 100%;
-                flex: 1;
-                order: 2; /* Controls below */
-                border-right: none;
-            }
-
+            .preview { flex: 0 0 45vh; padding: 15px; order: 1; border-bottom: 1px solid var(--border); }
+            .controls { width: 100%; flex: 1; order: 2; border-right: none; }
             .header { padding: 15px; text-align: center; }
-            
-            .action-container {
-                position: fixed; /* Stick to bottom on mobile */
-                bottom: 20px;
-                width: 90%;
-                justify-content: center;
-                gap: 8px;
-            }
-            .action-btn {
-                flex: 1;
-                justify-content: center;
-                padding: 12px 10px; /* Smaller padding for mobile to fit 3 buttons */
-                font-size: 0.85rem;
-                gap: 5px;
-            }
-            
-            /* Hide scrollbar on mobile controls for cleaner look */
+            .action-container { position: fixed; bottom: 20px; width: 90%; justify-content: center; gap: 8px; }
+            .action-btn { flex: 1; justify-content: center; padding: 12px 10px; font-size: 0.85rem; gap: 5px; }
             .scroll-area::-webkit-scrollbar { display: none; }
         }
-
     </style>
 </head>
 <body>
 
     <div class="controls">
         <div class="header">
-            <div class="title">Soundie PFP Maker</div>
-            <div class="subtitle">Build your unique Soundie PFP.</div>
+            <img src="soundness_logo.png" alt="Soundness" class="brand-logo" id="brandLogo">
+            
+            <div>
+                <div class="title">Soundie PFP Maker</div>
+                <div class="subtitle">Build your unique Soundie PFP.</div>
+            </div>
         </div>
 
         <div class="scroll-area">
             <div class="section-label">Select Category</div>
-            <div class="tab-group" id="tabs">
-                </div>
+            <div class="tab-group" id="tabs"></div>
 
             <div class="section-label">Choose Item</div>
-            <div class="item-grid" id="grid">
-                </div>
+            <div class="item-grid" id="grid"></div>
             
             <div class="footer-info">
                 <div class="credits">
                     <p>Created by <a href="https://x.com/iskycboy" target="_blank">@iskycboy</a></p>
                     <p>Discord: <span style="color:#fff; font-weight:600;">sky5072</span></p>
                 </div>
-
                 <div class="section-label" style="text-align:center;">Official Links</div>
                 <div class="link-grid">
                     <a href="https://soundness.xyz/" target="_blank" class="link-btn">Soundness</a>
@@ -375,25 +240,21 @@
                     <a href="https://github.com/SoundnessLabs/soundness-layer" target="_blank" class="link-btn">Testnet</a>
                 </div>
             </div>
-
             <div style="height: 100px;"></div>
         </div>
     </div>
 
     <div class="preview">
         <canvas id="canvas" width="1000" height="1000"></canvas>
-        
         <div class="action-container">
             <button class="action-btn btn-random" onclick="randomize()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 8h.01"></path><path d="M8 8h.01"></path><path d="M8 16h.01"></path><path d="M16 16h.01"></path><path d="M12 12h.01"></path></svg>
                 Random
             </button>
-
             <button class="action-btn btn-share" onclick="shareToX()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                 Share
             </button>
-
             <button class="action-btn btn-dl" onclick="download()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 Save
@@ -402,9 +263,13 @@
     </div>
 
     <script>
+        // --- CONFIGURATION ---
+        // INI ADALAH URL GITHUB RAW KAMU.
+        // Dengan ini, gambar akan diload langsung dari GitHub, bukan folder relatif.
         const GITHUB_RAW_URL = "https://raw.githubusercontent.com/iskycboy/Portofolio/main/soundness-testnet/soundie-pfp-maker/";
-        
+
         // --- ASSET DATABASE ---
+        // (Isi data tidak saya ubah, saya hanya merapikan path di fungsi loadImage)
         const ASSETS = {
             base: [
                 { id: 'base1', name: 'Skin 1', img: 'base1.png' },
@@ -532,21 +397,35 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
-        // --- CORE FUNCTIONS ---
+        // --- CORE FUNCTIONS (FIXED) ---
+        // UPDATE: Logo Soundness di Header juga pakai Github Raw
+        document.getElementById('brandLogo').src = GITHUB_RAW_URL + 'soundness_logo.png';
+
         function loadImage(src) {
             return new Promise((resolve) => {
                 const img = new Image();
-                img.crossOrigin = "Anonymous"; // Add CORS support
+                img.crossOrigin = "Anonymous"; // Support CORS
+                
+                // FIX: Jika src adalah path lokal (bukan data: atau http), tambahkan URL GitHub Raw
+                let finalSrc = src;
+                if (!src.startsWith('data:') && !src.startsWith('http')) {
+                    // Hapus ./ jika ada
+                    const cleanPath = src.replace(/^\.\//, '');
+                    finalSrc = GITHUB_RAW_URL + cleanPath;
+                }
+
                 img.onload = () => resolve(img);
-                img.onerror = () => resolve(null);
-                img.src = src;
+                img.onerror = () => {
+                    console.warn(`Gagal memuat gambar: ${finalSrc}`);
+                    resolve(null);
+                };
+                img.src = finalSrc;
             });
         }
 
         async function draw() {
             // 1. Draw Background
             const bgVal = state.bg.val || '#0f172a';
-            // Parse Gradient Strings for Canvas
             if (bgVal.includes('gradient')) {
                  let grad;
                  if (bgVal.includes('linear-gradient(to top')) {
@@ -569,7 +448,6 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // 2. Draw Layers
-            // ORDER: Base -> Outfit -> Hair -> Mouth -> Face (Glasses) -> Brows -> Headwear -> Logo
             const layers = [
                 state.base,
                 state.outfit,
@@ -604,20 +482,12 @@
 
         function renderTabs() {
             const tabs = [
-                { id: 'base', label: 'SKIN' },
-                { id: 'bg', label: 'BG' },
-                { id: 'outfit', label: 'OUTFIT' },
-                { id: 'hair', label: 'HAIR' },
-                { id: 'mouth_acc', label: 'MOUTH' },
-                { id: 'face_acc', label: 'FACE' },
-                { id: 'eyebrows', label: 'BROWS' },
-                { id: 'head_acc', label: 'HEAD' },
-                { id: 'logo', label: 'LOGO' }
+                { id: 'base', label: 'SKIN' }, { id: 'bg', label: 'BG' }, { id: 'outfit', label: 'OUTFIT' },
+                { id: 'hair', label: 'HAIR' }, { id: 'mouth_acc', label: 'MOUTH' }, { id: 'face_acc', label: 'FACE' },
+                { id: 'eyebrows', label: 'BROWS' }, { id: 'head_acc', label: 'HEAD' }, { id: 'logo', label: 'LOGO' }
             ];
-            
             const container = document.getElementById('tabs');
             container.innerHTML = '';
-            
             tabs.forEach(t => {
                 const btn = document.createElement('div');
                 btn.className = `tab-btn ${t.id === currentTab ? 'active' : ''}`;
@@ -630,20 +500,24 @@
         function renderGrid() {
             const grid = document.getElementById('grid');
             grid.innerHTML = '';
-
             ASSETS[currentTab].forEach(item => {
                 const el = document.createElement('div');
-                const isSelected = state[currentTab].id === item.id;
-                el.className = `item-card ${isSelected ? 'selected' : ''}`;
-                
+                el.className = `item-card ${state[currentTab].id === item.id ? 'selected' : ''}`;
                 if (currentTab === 'bg') {
                     el.innerHTML = `<div class="bg-preview" style="background:${item.val};"></div>`;
                 } else if (item.img) {
-                    el.innerHTML = `<img src="${item.img}" loading="lazy">`;
+                    // Tampilkan gambar di grid, gunakan fungsi Helper untuk URL
+                    let thumbSrc = item.img;
+                    if (!thumbSrc.startsWith('data:') && !thumbSrc.startsWith('http')) {
+                         const cleanPath = thumbSrc.replace(/^\.\//, '');
+                         thumbSrc = GITHUB_RAW_URL + cleanPath;
+                    }
+                    el.innerHTML = `<img src="${thumbSrc}" loading="lazy">`;
                 } else {
                     el.innerHTML = `<span style="font-size:1.5rem; opacity:0.5;">❌</span>`;
                 }
-
+                
+                // Label nama item
                 if (item.name) {
                     const label = document.createElement('div');
                     label.className = 'item-name';
@@ -656,22 +530,15 @@
             });
         }
 
-        // --- NEW: RANDOMIZE FUNCTION ---
         function randomize() {
-            // List of categories to randomize
             const categories = ['base', 'bg', 'outfit', 'hair', 'mouth_acc', 'face_acc', 'eyebrows', 'head_acc', 'logo'];
-
             categories.forEach(cat => {
                 const items = ASSETS[cat];
                 if (items && items.length > 0) {
-                    // Pick a random index
                     const randomIndex = Math.floor(Math.random() * items.length);
-                    // Update state
                     state[cat] = items[randomIndex];
                 }
             });
-
-            // Re-draw canvas and re-render grid (to show selected items)
             draw();
             renderGrid();
         }
@@ -679,10 +546,7 @@
         function download() {
             try {
                 canvas.toBlob(function(blob) {
-                    if (!blob) {
-                        alert("Canvas empty or security error. Please use Live Server.");
-                        return;
-                    }
+                    if (!blob) return alert("Download failed. Use Live Server.");
                     const link = document.createElement('a');
                     link.download = `Soundie_PFP_${Date.now()}.png`;
                     link.href = URL.createObjectURL(blob);
@@ -690,14 +554,11 @@
                     link.click();
                     document.body.removeChild(link);
                 }, 'image/png');
-            } catch (e) {
-                alert("Download failed. If using local file, use Live Server.");
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         async function shareToX() {
-            const text = encodeURIComponent("Check out my #Soundie PFP! 🐬✨ Created with Soundie Creator.\n\n@SoundnessLabs #SUI");
+            const text = encodeURIComponent("Check out my #Soundie PFP! 🐬✨ Created with Soundie PFP Maker.\n\n@SoundnessLabs #SUI");
             canvas.toBlob(async function(blob) {
                 if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], "soundie.png", { type: "image/png" })] })) {
                     try {
@@ -724,7 +585,4 @@
 
     </script>
 </body>
-
 </html>
-
-
