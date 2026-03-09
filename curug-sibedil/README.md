@@ -53,15 +53,15 @@ Before you begin, ensure you have met the following requirements:
     npm install
     npm run build
 
-4. **Environment Setup:
-    Copy the .env.example file and rename it to .env.**
-    ```bash
-    cp .env.example .env
-
+4. **Environment Setup:**
+   Copy the `.env.example` file and rename it to `.env`.
+   ```bash
+   cp .env.example .env
+    
   **Generate the application key:**
     ```bash
     php artisan key:generate
-    
+    ```
 5. **Database Configuration:
     Update your .env file with your database credentials:**
     ```bash
@@ -71,7 +71,7 @@ Before you begin, ensure you have met the following requirements:
     DB_DATABASE=your_database_name
     DB_USERNAME=your_database_user
     DB_PASSWORD=your_database_password
-
+    ```
 6. **Midtrans Configuration:
     Add your Midtrans keys to the .env file:**
     ```bash
@@ -80,6 +80,7 @@ Before you begin, ensure you have met the following requirements:
     MIDTRANS_IS_PRODUCTION=false
     MIDTRANS_IS_SANITIZED=true
     MIDTRANS_IS_3DS=true
+    ```
     
 7. **Run Migrations:**
     ```bash
@@ -87,4 +88,14 @@ Before you begin, ensure you have met the following requirements:
 
 8. **Start the local development server:**
    ```bash
-    php artisan serve
+   php artisan serve
+
+
+👨‍💻 Author
+Nurdin
+
+Web3 Content Creator & Developer
+
+Telkom University Purwokerto - Informatics Engineering
+
+Built for Curug Sibedil Tourism, Kabupaten Pemalang.
