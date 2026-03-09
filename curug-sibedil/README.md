@@ -36,9 +36,34 @@ Before you begin, ensure you have met the following requirements:
 * MySQL
 * A Midtrans Account (Server Key & Client Key for Sandbox/Production)
 
-## 📦 Installation & Setup
+## 📦 Installation & Setup'
 
 1. **Clone the repository:**
    ```bash
    git clone [https://github.com/yourusername/curug-sibedil-ticketing.git](https://github.com/yourusername/curug-sibedil-ticketing.git)
    cd curug-sibedil-ticketing
+
+
+2. **Install PHP dependencies:**
+    ```bash
+    composer install
+
+3. **Install NPM dependencies:**
+    ```bash
+    npm install
+    npm run build
+
+4. **    **
+    ```bash
+
+5. **    **
+    ```bash
+
+6. **    **
+    ```bash
+
+7. **    **
+    ```bash
+
+8. **    **
+    ```bash
