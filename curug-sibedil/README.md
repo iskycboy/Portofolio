@@ -53,17 +53,38 @@ Before you begin, ensure you have met the following requirements:
     npm install
     npm run build
 
-4. **    **
+4. **Environment Setup:
+    Copy the .env.example file and rename it to .env.**
     ```bash
+    cp .env.example .env
 
-5. **    **
+  **Generate the application key:**
     ```bash
+    php artisan key:generate
+    
+5. **Database Configuration:
+    Update your .env file with your database credentials:**
+    ```bash
+    DB_CONNECTION=mysql
+    DB_HOST=127.0.0.1
+    DB_PORT=3306
+    DB_DATABASE=your_database_name
+    DB_USERNAME=your_database_user
+    DB_PASSWORD=your_database_password
 
-6. **    **
+6. **Midtrans Configuration:
+    Add your Midtrans keys to the .env file:**
     ```bash
+    MIDTRANS_SERVER_KEY=your_server_key
+    MIDTRANS_CLIENT_KEY=your_client_key
+    MIDTRANS_IS_PRODUCTION=false
+    MIDTRANS_IS_SANITIZED=true
+    MIDTRANS_IS_3DS=true
+    
+7. **Run Migrations:**
+    ```bash
+    php artisan migrate
 
-7. **    **
-    ```bash
-
-8. **    **
-    ```bash
+8. **Start the local development server:**
+   ```bash
+    php artisan serve
