@@ -97,7 +97,9 @@ Before you begin, ensure you have met the following requirements:
    php artisan serve
    ```
 
-👨‍💻 Author
+
+
+**👨‍💻 Author**
 Nurdin
 
 Web3 Content Creator & Developer
