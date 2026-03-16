@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SOUNDNESS TCG - Register</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+    :root{--aqua:#00f2ff;--deep-blue:#050b1a;--glow:0 0 25px rgba(0,242,255,0.8);--gold:#ffd700;--damage:#ff3e3e;}
+    body{
+        background: radial-gradient(circle at top, rgba(26,58,90,0.8) 0%, rgba(5,11,26,0.98) 100%), url('images/bg-game.png');
+        background-size: cover; background-position: center; background-repeat: no-repeat;
+        color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh;
+    }
+    .auth-box { background: rgba(0,10,25,0.9); border: 2px solid var(--aqua); padding: 30px; border-radius: 15px; box-shadow: var(--glow); text-align: center; width: 300px; }
+    .start-title { font-size:40px; color:var(--aqua); letter-spacing:5px; text-shadow:var(--glow); margin-top:0; margin-bottom: 20px; }
+    .auth-input { width: 100%; padding: 10px; margin: 10px 0; background: #111; color: var(--aqua); border: 1px solid var(--aqua); border-radius: 5px; box-sizing: border-box; text-align: center; font-weight: bold; letter-spacing: 1px; }
+    .auth-input:focus { outline: none; box-shadow: 0 0 10px var(--aqua); }
+    .btn-play { padding:10px; font-size:16px; background:var(--aqua); color:#000; font-weight:bold; border:none; border-radius:8px; cursor:pointer; width:100%; margin-top: 15px; text-transform:uppercase; transition:0.3s; }
+    .btn-play:hover { box-shadow:0 0 20px var(--aqua); transform:scale(1.05); }
+    .link { color:var(--gold); font-size:12px; margin-top:15px; cursor:pointer; display:block; text-decoration:none; }
+</style>
+</head>
+<body>
+
+<div class="auth-box">
+    <h1 class="start-title">SOUNDNESS</h1>
+    <h2 style="color:var(--gold); font-size: 16px; margin-top:0;">NEW DIVER REGISTRATION</h2>
+    <input type="text" id="username" class="auth-input" placeholder="Username (In-Game)" autocomplete="off">
+    <input type="email" id="email" class="auth-input" placeholder="Email Address">
+    <input type="password" id="password" class="auth-input" placeholder="Password (Min 6 Chars)">
+    <button class="btn-play" onclick="registerUser()">REGISTER</button>
+    <a href="login.html" class="link">Already have an account? Login here</a>
+    <p id="msg" style="color:var(--damage); font-size:12px; margin-top:10px;"></p>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://nhhqapnuhhvweooeeseh.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_rS96SvJYsuPikvJ8UFblEA_Gzc9gTys';
+    // Mencegah error duplikasi variabel dengan menamakannya "supa"
+    const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function registerUser() {
+        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const pass = document.getElementById('password').value;
+        const msg = document.getElementById('msg');
+        
+        if(!username || !email || !pass) { msg.textContent = "Please fill all fields!"; return; }
+        
+        msg.style.color = "var(--aqua)"; msg.textContent = "Creating Diver Profile...";
+        
+        const { data, error } = await supa.auth.signUp({ email: email, password: pass });
+        
+        if (error) {
+            msg.style.color = "var(--damage)"; msg.textContent = error.message;
+        } else if (data.user) {
+            const { error: dbError } = await supa.from('users').insert([{
+                id: data.user.id,
+                username: username,
+                rank: { points: 0, tierIdx: 0, streak: 0 },
+                inventory: [] 
+            }]);
+            
+            if (dbError) {
+                msg.style.color = "var(--damage)"; msg.textContent = "Database Error: " + dbError.message;
+            } else {
+                window.location.href = "index.html";
+            }
+        }
+    }
+</script>
+</body>
+</html>
