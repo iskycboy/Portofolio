@@ -645,7 +645,25 @@ try {
     window.getRarityColor = function(rarity) { if(rarity === "Legendary") return "#ffaa00"; if(rarity === "Epic") return "#a200ff"; if(rarity === "Rare") return "#00f2ff"; return "#aaaaaa"; };
     window.setFilter = function(type) { window.currentFilter = type; document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active')); document.getElementById('flt-' + type.toLowerCase()).classList.add('active'); if (window.currentTab === 'deck') window.renderLibrary(); else window.renderAlbum(); };
     window.switchTab = function(tab) { window.currentTab = tab; document.getElementById('library-container').style.display = tab === 'deck' ? 'flex' : 'none'; document.getElementById('album-grid').style.display = tab === 'album' ? 'flex' : 'none'; document.getElementById('tab-deck').style.background = tab === 'deck' ? 'var(--aqua)' : '#333'; document.getElementById('tab-deck').style.color = tab === 'deck' ? '#000' : 'var(--aqua)'; document.getElementById('tab-album').style.background = tab === 'album' ? 'var(--aqua)' : '#333'; document.getElementById('tab-album').style.color = tab === 'album' ? '#000' : 'var(--aqua)'; document.getElementById('deck-action-bar').style.display = tab === 'deck' ? 'flex' : 'none'; window.setFilter('All'); };
-    window.enterDeckMenu = function() { window.isPvPMode = false; document.getElementById('start-screen').style.opacity = '0'; setTimeout(() => { document.getElementById('start-screen').style.display = 'none'; document.getElementById('deck-menu').style.display = 'flex'; window.updateRankDashboard(); window.switchTab('deck'); }, 500); };
+    
+    window.enterDeckMenu = function() { 
+            window.isPvPMode = false; 
+            document.getElementById('start-screen').style.opacity = '0'; 
+            setTimeout(() => { 
+                document.getElementById('start-screen').style.display = 'none'; 
+                document.getElementById('deck-menu').style.display = 'flex'; 
+                
+                // Tampilkan elemen Campaign, sembunyikan elemen PvP
+                document.getElementById('menu-rank-name').parentNode.style.display = 'block';
+                document.getElementById('start-btn').style.display = 'block';
+                let readyBtn = document.getElementById('ready-btn'); if(readyBtn) readyBtn.style.display = 'none';
+                let timerDisp = document.getElementById('pvp-timer-display'); if(timerDisp) timerDisp.style.display = 'none';
+
+                window.updateRankDashboard(); 
+                window.switchTab('deck'); 
+            }, 500); 
+        };
+
     window.updateRankDashboard = function() { document.getElementById('current-rank-text').textContent = window.TIER_NAMES[window.rankData.tierIdx || 0]; document.getElementById('current-rank-text').style.color = window.TIER_COLORS[window.rankData.tierIdx || 0]; document.getElementById('rank-points').textContent = window.rankData.points || 0; document.getElementById('col-count').textContent = `${window.inventory.length} / ${window.DATABASE_CARDS.length}`; document.getElementById('menu-rank-name').textContent = window.TIER_NAMES[window.rankData.tierIdx || 0]; document.getElementById('menu-rank-name').style.color = window.TIER_COLORS[window.rankData.tierIdx || 0]; };
     window.returnToStartScreen = function() { document.getElementById('deck-menu').style.display = 'none'; document.getElementById('start-screen').style.display = 'flex'; document.getElementById('start-screen').style.opacity = '1'; };
     
@@ -734,16 +752,18 @@ try {
             if (status === 'SUBSCRIBED') { await window.pvpChannel.track({ online_at: new Date().toISOString() }); } 
         });
     };
-    
+
     window.startPvPGame = function() {
         document.getElementById('pvp-lobby').style.display = 'none';
-        document.getElementById('start-screen').style.display = 'none'; // <-- TAMBAHKAN BARIS INI
         document.getElementById('deck-menu').style.display = 'flex';
-        
         window.isPvPMode = true;
         window.pvpTimer = 60;
         window.isReady = false;
         window.opponentReady = false;
+
+        // Sembunyikan elemen Campaign
+        document.getElementById('menu-rank-name').parentNode.style.display = 'none';
+        document.getElementById('start-btn').style.display = 'none';
 
         let timerDisplay = document.getElementById('pvp-timer-display') || document.createElement('div');
         timerDisplay.id = 'pvp-timer-display';
@@ -764,6 +784,7 @@ try {
         readyBtn.id = 'ready-btn';
         readyBtn.innerText = "READY";
         readyBtn.disabled = false;
+        readyBtn.style.display = 'block';
         document.getElementById('deck-menu').appendChild(readyBtn);
         
         readyBtn.onclick = () => {
