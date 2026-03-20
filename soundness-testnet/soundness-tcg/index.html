@@ -666,7 +666,7 @@ try {
         if (type === 'host') { window.isHost = true; const { error } = await window.supaClient.from('rooms').insert([{ id: room, host: window.currentUser, status: 'waiting' }]); if (error) { msg.style.color = "var(--damage)"; msg.textContent = "Room ID already exists or Database Error!"; return; } msg.textContent = `Room [${room}] Made! Waiting for the opponent...`; window.connectToChannel(room); } else if (type === 'join') { window.isHost = false; const { data, error } = await window.supaClient.from('rooms').select('*').eq('id', room).single(); if (error || !data) { msg.style.color = "var(--damage)"; msg.textContent = "Room not found!"; return; } if (data.status !== 'waiting') { msg.style.color = "var(--damage)"; msg.textContent = "Room is full / playing!"; return; } await window.supaClient.from('rooms').update({ status: 'playing' }).eq('id', room); msg.textContent = `Joining Room [${room}]...`; window.connectToChannel(room); }
     };
 
-    window.connectToChannel = function(roomId) {
+   window.connectToChannel = function(roomId) {
         window.pvpChannel = window.supaClient.channel(`room_${roomId}`, { config: { presence: { key: window.currentUser } } });
         window.pvpChannel.on('presence', { event: 'sync' }, () => {
             const state = window.pvpChannel.presenceState();
@@ -689,8 +689,50 @@ try {
         }).on('broadcast', { event: 'pass_turn' }, () => {
             window.logAction("Opponent ended their turn. It's your turn!", "system");
             window.startPlayerTurn();
-        // ---> SAMPAI SINI <---
-        }).subscribe(async (status) => {
+            
+        // --- TAHAP 2: PENDENGAR KARTU MASUK ---
+        }).on('broadcast', { event: 'summon_monster' }, (payload) => {
+            let c = payload.card;
+            let eSlotIdx = 2 - payload.slotIdx; // Dibalik agar posisinya saling berhadapan persis di layar
+            let slot = document.getElementById('e-' + eSlotIdx);
+            if(slot) {
+                const div = document.createElement('div'); 
+                div.className = 'card monster minion-card'; 
+                div.style.backgroundImage = `url('${c.img}')`;
+                div.dataset.cardName = c.name; 
+                div.dataset.cardDef = c.def || 0; 
+                div.dataset.cardAtk = c.atk || 0; 
+                div.dataset.passive = c.desc || ""; 
+                div.dataset.uid = payload.uid; // ID kembar untuk target serangan nanti
+                div.dataset.pos = "attack"; 
+                div.innerHTML = `<div class="stat-box" style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.8);padding:2px 4px;font-size:9px;color:#ff9999;border-radius:3px;">ATK ${c.atk}</div>`;
+                slot.appendChild(div);
+                window.logAction(`Opponent summoned ${c.name}!`, "enemy");
+            }
+        }).on('broadcast', { event: 'change_pos' }, (payload) => {
+            let enemyCard = document.querySelector(`.card[data-uid="${payload.uid}"]`);
+            if(enemyCard) {
+                enemyCard.dataset.pos = payload.pos;
+                if (payload.pos === "defense") { 
+                    enemyCard.classList.add('defense-mode'); 
+                    enemyCard.querySelector('.stat-box').innerHTML = `DEF ${enemyCard.dataset.cardDef}`; 
+                    enemyCard.querySelector('.stat-box').style.transform = `rotate(-90deg) translate(10px, 15px)`; 
+                } else { 
+                    enemyCard.classList.remove('defense-mode'); 
+                    enemyCard.querySelector('.stat-box').innerHTML = `ATK ${enemyCard.dataset.cardAtk}`; 
+                    enemyCard.querySelector('.stat-box').style.transform = `rotate(0deg)`; 
+                }
+            }
+        }).on('broadcast', { event: 'set_trap' }, (payload) => {
+            window.enemyActiveTrap = true;
+            window.logAction(`Opponent set a Trap card face-down!`, "enemy");
+        }).on('broadcast', { event: 'play_spell' }, (payload) => {
+            window.logAction(`Opponent activated Spell: ${payload.card.name}!`, "enemy");
+            document.getElementById('preview-panel').classList.add('flash-spell'); 
+            setTimeout(() => document.getElementById('preview-panel').classList.remove('flash-spell'), 800);
+        // --------------------------------------
+        
+        }).subscribe(async (status) => { 
             if (status === 'SUBSCRIBED') { await window.pvpChannel.track({ online_at: new Date().toISOString() }); } 
         });
     };
@@ -947,13 +989,16 @@ try {
         const div = document.createElement('div'); let cType = card.type || "Monster";
         div.className = `card ${cType.toLowerCase()}`; div.style.backgroundImage = `url('${card.img}')`; div.dataset.pos = "attack"; div.dataset.passive = card.desc || ""; 
         if (cType === "Monster") {
-            div.dataset.cardAtk = card.atk || 0; div.dataset.cardDef = card.def || 0; div.dataset.cardName = card.name; div.dataset.uid = Math.random();
+            div.dataset.cardAtk = card.atk || 0; div.dataset.cardDef = card.def || 0; div.dataset.cardName = card.name; 
+            div.dataset.uid = card.uid || Math.random(); // Sinkronisasi ID untuk PvP
             div.innerHTML = `<div class="stat-box" style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.8);padding:2px 4px;font-size:9px;color:var(--aqua);border-radius:3px;transform:rotate(0deg);transition:0.3s;">ATK ${card.atk || 0}</div>`;
             div.addEventListener('contextmenu', function(e) {
                 e.preventDefault(); 
                 if(isFromField && ["MAIN 1", "MAIN 2"].includes(window.currentPhase)) {
                     if(div.dataset.pos === "attack") { div.dataset.pos = "defense"; div.classList.add('defense-mode'); div.querySelector('.stat-box').innerHTML = `DEF ${div.dataset.cardDef}`; div.querySelector('.stat-box').style.transform = `rotate(-90deg) translate(10px, 15px)`; window.logAction(`Changed ${card.name} to Defense Position.`, "player"); } 
                     else { div.dataset.pos = "attack"; div.classList.remove('defense-mode'); div.querySelector('.stat-box').innerHTML = `ATK ${div.dataset.cardAtk}`; div.querySelector('.stat-box').style.transform = `rotate(0deg)`; window.logAction(`Changed ${card.name} to Attack Position.`, "player"); }
+                    // Broadcast ubah posisi ke musuh
+                    if(window.isPvPMode) window.pvpChannel.send({ type: 'broadcast', event: 'change_pos', payload: { uid: div.dataset.uid, pos: div.dataset.pos } });
                 }
             });
         } else if (cType === "Spell" && (card.atk || 0) > 0) { div.innerHTML = `<div style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.8);padding:2px 4px;font-size:9px;color:var(--aqua);border-radius:3px;">ATK ${card.atk}</div>`; }
@@ -985,11 +1030,21 @@ try {
     window.playCard = function(card, hIdx) {
         if (!["MAIN 1", "MAIN 2"].includes(window.currentPhase)) { window.logAction("Cards can only be played in MAIN 1 or MAIN 2!", "damage"); return; }
         let cType = card.type || "Monster";
+        
+        // Bikin ID unik untuk kartu ini (Penting untuk PVP!)
+        let cardUid = Math.random().toString(36).substr(2, 9);
+        card.uid = cardUid;
+
         if (cType === "Monster") {
             let isSpecial = (card.id === 4 || card.id === 5); if (!isSpecial && window.normalSummonUsed) { window.logAction("Normal Summon already used this turn!", "system"); return; }
-            let slot = null; for (let i = 0; i < 3; i++) { let s = document.getElementById('m-' + i); if (s && s.innerHTML === "") { slot = s; break; } }
+            let slotIdx = -1; let slot = null; 
+            for (let i = 0; i < 3; i++) { let s = document.getElementById('m-' + i); if (s && s.innerHTML === "") { slot = s; slotIdx = i; break; } }
             if (slot) {
                 const ui = window.createCardUI(card, undefined, true); slot.appendChild(ui); if(!isSpecial) window.normalSummonUsed = true; window.logAction(`Summoned ${card.name}${isSpecial ? " (Special Summon)" : ""}.`, "player");
+                
+                // Broadcast Summon Monster ke Musuh
+                if (window.isPvPMode) window.pvpChannel.send({ type: 'broadcast', event: 'summon_monster', payload: { card: card, slotIdx: slotIdx, uid: cardUid } });
+
                 if(card.id === 4 || card.id === 6) { window.logAction("Searcher activated!", "system"); window.drawCard(1); }
                 if(card.id === 7) { window.logAction("Siren Effect: Removed enemy defenses! (-1500 HP)", "system"); window.enemyHP = Math.max(0, window.enemyHP - 1500); window.updateUI(); if(window.enemyHP <= 0) window.checkWinCondition(); }
                 if(card.id === 5 && window.playerGraveyard.length > 0) {
@@ -1002,6 +1057,10 @@ try {
             document.getElementById('preview-panel').classList.add('flash-spell'); setTimeout(() => document.getElementById('preview-panel').classList.remove('flash-spell'), 800);
             window.logAction(`Activated Spell: ${card.name}`, "player"); window.playerGraveyard.push({ name: card.name, atk: card.atk || 0, def: card.def || 0 }); window.updateUI();
             let buffAmt = card.effectVal !== undefined ? card.effectVal : 1000; window.bonusAtk += buffAmt; window.logAction(`All monsters gain +${buffAmt} ATK for the next attack!`, "system");
+            
+            // Broadcast Spell ke Musuh
+            if (window.isPvPMode) window.pvpChannel.send({ type: 'broadcast', event: 'play_spell', payload: { card: card } });
+
             if(card.id === 8) { window.logAction("Curiosity Effect: Draw 2 cards!", "system"); window.drawCard(2); }
             let ind = document.getElementById('turn-indicator'); if(ind) ind.textContent = "SPELL ACTIVATED!"; setTimeout(() => { if(ind) ind.textContent = "PHASE: " + window.currentPhase; }, 1500);
             window.handCards.splice(hIdx, 1); window.renderHand();
@@ -1009,7 +1068,12 @@ try {
             let slot = null; for (let i = 0; i < 2; i++) { let s = document.getElementById('s-' + i); if (s && s.innerHTML === "") { slot = s; break; } }
             if (slot) {
                 const ui = window.createCardUI(card, undefined, true); ui.classList.add('set-down'); ui.innerHTML = ""; slot.appendChild(ui); window.activeTrap = { cardObj: card, el: ui }; 
-                window.logAction(`Set 1 Trap card face-down.`, "player"); window.handCards.splice(hIdx, 1); window.renderHand();
+                window.logAction(`Set 1 Trap card face-down.`, "player"); 
+                
+                // Broadcast Trap ke Musuh
+                if (window.isPvPMode) window.pvpChannel.send({ type: 'broadcast', event: 'set_trap', payload: { cardName: card.name } });
+
+                window.handCards.splice(hIdx, 1); window.renderHand();
             } else { window.logAction("No empty support slots to set Trap!", "system"); }
         }
     };
