@@ -6,26 +6,19 @@
 <title>SOUNDNESS TCG - Authentication</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-    :root { --aqua: #00f2ff; --deep-blue: #050b1a; --glow: 0 0 25px rgba(0,242,255,0.8); --damage: #ff3e3e; }
+    :root { --aqua: #00f2ff; --deep-blue: #050b1a; --glow: 0 0 25px rgba(0,242,255,0.8); --damage: #ff3e3e; --gold: #ffd700; }
     body { background: radial-gradient(circle at top, #1a3a5a 0%, var(--deep-blue) 100%); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-    
     .auth-container { background: rgba(0,10,25,0.9); border: 2px solid var(--aqua); padding: 40px; border-radius: 15px; box-shadow: var(--glow); text-align: center; width: 320px; position: relative; z-index: 10; }
     .title { font-size: 32px; color: var(--aqua); letter-spacing: 5px; text-shadow: var(--glow); margin-top: 0; margin-bottom: 5px; }
     .subtitle { color: #aaa; font-style: italic; font-size: 14px; margin-bottom: 25px; }
-    
     input { width: 100%; padding: 12px; margin: 10px 0; background: #111; color: var(--aqua); border: 1px solid var(--aqua); border-radius: 5px; box-sizing: border-box; text-align: center; font-weight: bold; letter-spacing: 1px; outline: none; }
     input:focus { box-shadow: 0 0 10px var(--aqua); }
-    
     .btn { width: 100%; padding: 12px; margin-top: 15px; font-size: 16px; background: var(--aqua); color: #000; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; box-shadow: var(--glow); text-transform: uppercase; transition: 0.3s; }
-    .btn:hover { transform: scale(1.05); }
-    .btn:disabled { background: #444; color: #888; box-shadow: none; cursor: not-allowed; transform: none; }
-    
+    .btn:hover:not(:disabled) { transform: scale(1.05); }
+    .btn:disabled { background: #444; color: #888; box-shadow: none; cursor: not-allowed; }
     .toggle-text { margin-top: 20px; font-size: 12px; color: #aaa; cursor: pointer; text-decoration: underline; transition: 0.2s; }
     .toggle-text:hover { color: var(--aqua); }
-    
-    #msg { color: var(--damage); font-size: 12px; margin-top: 15px; font-weight: bold; height: 15px; }
-    
-    /* CUSTOM POP-UP EMAIL VERIFICATION */
+    #msg { font-size: 12px; margin-top: 15px; font-weight: bold; height: 15px; }
     #verify-popup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); }
     .popup-box { background: var(--deep-blue); border: 2px solid var(--aqua); padding: 30px; border-radius: 10px; text-align: center; box-shadow: var(--glow); max-width: 80%; width: 350px; }
 </style>
@@ -36,7 +29,7 @@
     <h1 class="title">SOUNDNESS</h1>
     <p class="subtitle" id="mode-subtitle">Enter your credentials to dive.</p>
     
-    <input type="text" id="username" placeholder="USERNAME" style="display:none;">
+    <input type="text" id="username" placeholder="USERNAME (In-Game)" style="display:none;">
     <input type="email" id="email" placeholder="EMAIL ADDRESS">
     <input type="password" id="password" placeholder="PASSWORD">
     
@@ -48,12 +41,12 @@
 
 <div id="verify-popup">
     <div class="popup-box">
-        <h2 style="color: var(--aqua); letter-spacing: 2px; margin-top: 0;">VERIFICATION REQUIRED</h2>
+        <h2 style="color: var(--aqua); letter-spacing: 2px; margin-top: 0;">REGISTRATION SUCCESS</h2>
         <p style="color: #fff; font-size: 14px; line-height: 1.5; margin-bottom: 25px;">
-            Registration successful!<br><br>
-            Please check your email inbox (and spam folder) for the confirmation link to activate your account before logging in.
+            Your Diver Profile has been created!<br><br>
+            You can login directly.
         </p>
-        <button class="btn" onclick="closePopup()">ACKNOWLEDGE</button>
+        <button class="btn" onclick="closePopup()">PROCEED TO LOGIN</button>
     </div>
 </div>
 
@@ -61,7 +54,6 @@
     const supaClient = window.supabase.createClient('https://nhhqapnuhhvweooeeseh.supabase.co', 'sb_publishable_rS96SvJYsuPikvJ8UFblEA_Gzc9gTys');
     let isLoginMode = true;
 
-    // Cek apakah user sudah login
     window.onload = async function() {
         const { data: { session } } = await supaClient.auth.getSession();
         if (session) window.location.href = 'index.html';
@@ -70,9 +62,6 @@
     function toggleMode() {
         isLoginMode = !isLoginMode;
         document.getElementById('msg').textContent = '';
-        document.getElementById('email').value = '';
-        document.getElementById('password').value = '';
-        
         if (isLoginMode) {
             document.getElementById('username').style.display = 'none';
             document.getElementById('action-btn').textContent = 'LOGIN';
@@ -80,7 +69,6 @@
             document.getElementById('mode-subtitle').textContent = 'Enter your credentials to dive.';
         } else {
             document.getElementById('username').style.display = 'block';
-            document.getElementById('username').value = '';
             document.getElementById('action-btn').textContent = 'REGISTER';
             document.getElementById('toggle-btn').textContent = 'Already have an account? Login here';
             document.getElementById('mode-subtitle').textContent = 'Register to join the depths.';
@@ -90,46 +78,47 @@
     async function handleAuth() {
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value.trim();
-        const username = document.getElementById('username').value.trim().toUpperCase();
+        const username = document.getElementById('username').value.trim();
         const msg = document.getElementById('msg');
         const btn = document.getElementById('action-btn');
 
-        if (!email || !password) { msg.textContent = 'Please fill all required fields!'; return; }
-        if (!isLoginMode && !username) { msg.textContent = 'Username is required for registration!'; return; }
+        if (!email || !password) { msg.style.color = 'var(--damage)'; msg.textContent = 'Please fill all required fields!'; return; }
+        if (!isLoginMode && !username) { msg.style.color = 'var(--damage)'; msg.textContent = 'Username is required!'; return; }
 
-        msg.textContent = 'Processing...'; msg.style.color = 'var(--gold)'; btn.disabled = true;
+        msg.style.color = 'var(--gold)'; msg.textContent = 'Processing...'; btn.disabled = true;
 
-        if (isLoginMode) {
-            // PROSES LOGIN
-            const { data, error } = await supaClient.auth.signInWithPassword({ email, password });
-            if (error) {
-                msg.textContent = error.message; msg.style.color = 'var(--damage)'; btn.disabled = false;
-            } else {
-                msg.textContent = 'Login successful! Redirecting...'; msg.style.color = 'var(--aqua)';
+        try {
+            if (isLoginMode) {
+                const { data, error } = await supaClient.auth.signInWithPassword({ email, password });
+                if (error) { throw error; }
+                msg.style.color = 'var(--aqua)'; msg.textContent = 'Login successful! Redirecting...';
                 setTimeout(() => window.location.href = 'index.html', 1000);
-            }
-        } else {
-            // PROSES REGISTER
-            const { data, error } = await supaClient.auth.signUp({ email, password });
-            
-            if (error) {
-                msg.textContent = error.message; msg.style.color = 'var(--damage)'; btn.disabled = false;
             } else {
-                // Simpan username ke database users saat register (opsional/jika RLS membolehkan)
-                if (data.user) {
-                    await supaClient.from('users').insert([{ id: data.user.id, username: username, rank: { points: 0, tierIdx: 0, streak: 0 } }]).catch(e=>{});
-                }
-                msg.textContent = ''; btn.disabled = false;
+                const { data, error } = await supaClient.auth.signUp({ email, password });
+                if (error) { throw error; }
                 
-                // Tampilkan Pop-Up Verifikasi Email
+                if (data.user) {
+                    // PERBAIKAN: Gunakan format destructuring standar Supabase v2 alih-alih .catch()
+                    const { error: dbError } = await supaClient.from('users').insert([{ 
+                        id: data.user.id, 
+                        username: username, 
+                        rank: { points: 0, tierIdx: 0, streak: 0 }, 
+                        inventory: [] 
+                    }]);
+                    if (dbError) console.error("Database Insert Error:", dbError.message);
+                }
+                
+                msg.textContent = ''; btn.disabled = false;
                 document.getElementById('verify-popup').style.display = 'flex';
             }
+        } catch (err) {
+            msg.style.color = 'var(--damage)'; msg.textContent = err.message; btn.disabled = false;
         }
     }
 
     function closePopup() {
         document.getElementById('verify-popup').style.display = 'none';
-        toggleMode(); // Kembalikan form ke mode Login setelah register
+        toggleMode(); 
     }
 </script>
 </body>
