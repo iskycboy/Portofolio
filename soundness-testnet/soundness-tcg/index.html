@@ -528,10 +528,23 @@ try {
 
     window.updateUI = function() {
         try {
-            document.getElementById('enemy-bar').style.width = (window.enemyHP/window.enemyMaxHP*100) + "%"; document.getElementById('player-bar').style.width = (window.playerHP/4000*100) + "%"; 
-            document.getElementById('enemy-hp-text').textContent = Math.floor(window.enemyHP); document.getElementById('player-hp-text').textContent = Math.floor(window.playerHP);
-            let deckDisplay = document.getElementById('deck-count'); if (deckDisplay) { deckDisplay.textContent = window.gameDeck.length; if(window.gameDeck.length === 0) deckDisplay.classList.add('fatigue-warning'); else deckDisplay.classList.remove('fatigue-warning'); }
-            let pGy = document.getElementById('p-gy-count'); if(pGy) pGy.textContent = window.playerGraveyard.length; let eGy = document.getElementById('e-gy-count'); if(eGy) eGy.textContent = window.enemyGraveyard.length;
+            // Perbaikan lebar bar untuk PvP dan Campaign
+            let currentEnemyMax = window.isPvPMode ? 4000 : window.enemyMaxHP;
+            document.getElementById('enemy-bar').style.width = (window.enemyHP / currentEnemyMax * 100) + "%"; 
+            document.getElementById('player-bar').style.width = (window.playerHP / 4000 * 100) + "%"; 
+            
+            document.getElementById('enemy-hp-text').textContent = Math.floor(window.enemyHP); 
+            document.getElementById('player-hp-text').textContent = Math.floor(window.playerHP);
+            
+            let deckDisplay = document.getElementById('deck-count'); 
+            if (deckDisplay) { 
+                deckDisplay.textContent = window.gameDeck.length; 
+                if(window.gameDeck.length === 0) deckDisplay.classList.add('fatigue-warning'); 
+                else deckDisplay.classList.remove('fatigue-warning'); 
+            }
+            
+            let pGy = document.getElementById('p-gy-count'); if(pGy) pGy.textContent = window.playerGraveyard.length; 
+            let eGy = document.getElementById('e-gy-count'); if(eGy) eGy.textContent = window.enemyGraveyard.length;
         } catch(e) {}
     };
 
@@ -925,15 +938,19 @@ window.startPvPGame = function() {
         for (let i = 0; i < 2; i++) { let sSlot = document.getElementById('s-' + i); if (sSlot) sSlot.innerHTML = ""; }
         document.getElementById('hand').innerHTML = ""; window.bonusAtk = 0; 
         
+        // PERBAIKAN: Kunci HP Musuh jadi 4000 jika main PvP
         window.enemyMaxHP = window.isPvPMode ? 4000 : (window.TIER_LP[window.rankData.tierIdx] || 4000); 
-        window.enemyHP = window.enemyMaxHP; window.playerHP = 4000; window.playerGraveyard = []; window.enemyGraveyard = []; window.playerFatigue = 0; window.enemyFatigueCounter = 0; window.activeTrap = null;
+        window.enemyHP = window.enemyMaxHP; 
+        window.playerHP = 4000; 
+        window.playerMaxHP = 4000; 
         
+        window.playerGraveyard = []; window.enemyGraveyard = []; window.playerFatigue = 0; window.enemyFatigueCounter = 0; window.activeTrap = null;
         function getShuffledLayer() { let layer = JSON.parse(JSON.stringify(window.selectedLibrary)); for (let i = layer.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); [layer[i], layer[j]] = [layer[j], layer[i]]; } return layer; }
         window.gameDeck = [...getShuffledLayer(), ...getShuffledLayer(), ...getShuffledLayer()]; window.handCards = []; for(let i=0; i<4; i++) { if(window.gameDeck.length > 0) window.handCards.push(window.gameDeck.pop()); }
         window.renderHand(); 
         
         if (!window.isPvPMode) {
-            // CAMPAIGN MODE (SPAWN AI)
+            // CAMPAIGN MODE
             const bossName = window.TIER_BOSSES[window.rankData.tierIdx] || "ABYSSAL BOSS"; document.getElementById('boss-name-display').textContent = bossName;
             const eSlot = document.getElementById('e-1'); const eCard = document.createElement('div'); eCard.className = 'card monster'; eCard.id = 'enemy-boss-card'; 
             let bossImgs = ['images/monster21.png', 'images/monster12.png', 'images/monster8.png', 'images/monster15.png', 'images/monster35.png', 'images/monster38.png', 'images/monster39.png'];
@@ -944,7 +961,7 @@ window.startPvPGame = function() {
             eSlot.appendChild(eCard);
             window.manageEnemyField(false); window.logAction(`Campaign Stage: ${window.TIER_NAMES[window.rankData.tierIdx] || 'ROOKIE'} started.`, "system"); window.updateUI(); window.startPlayerTurn();
         } else {
-            // PVP MODE (MATIKAN AI)
+            // PVP MODE
             document.getElementById('boss-name-display').textContent = "OPPONENT";
             window.updateUI();
             if (window.isHost) {
