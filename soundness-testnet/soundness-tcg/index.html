@@ -670,6 +670,7 @@ try {
         if(!room) { msg.textContent = "Please enter a Room ID."; return; } msg.style.color = "var(--aqua)"; msg.textContent = "Connecting to Server..."; window.currentRoom = room;
         if (type === 'host') { window.isHost = true; const { error } = await window.supaClient.from('rooms').insert([{ id: room, host: window.currentUser, status: 'waiting' }]); if (error) { msg.style.color = "var(--damage)"; msg.textContent = "Room ID already exists or Database Error!"; return; } msg.textContent = `Room [${room}] Made! Waiting for the opponent...`; window.connectToChannel(room); } else if (type === 'join') { window.isHost = false; const { data, error } = await window.supaClient.from('rooms').select('*').eq('id', room).single(); if (error || !data) { msg.style.color = "var(--damage)"; msg.textContent = "Room not found!"; return; } if (data.status !== 'waiting') { msg.style.color = "var(--damage)"; msg.textContent = "Room is full / playing!"; return; } await window.supaClient.from('rooms').update({ status: 'playing' }).eq('id', room); msg.textContent = `Joining Room [${room}]...`; window.connectToChannel(room); }
     };
+   
     window.connectToChannel = function(roomId) {
         window.pvpChannel = window.supaClient.channel(`room_${roomId}`, { 
             config: { presence: { key: window.currentUser } } 
@@ -679,92 +680,81 @@ try {
             const state = window.pvpChannel.presenceState();
             let totalConnections = 0;
             for(let key in state) { totalConnections += state[key].length; }
-            
             if (totalConnections >= 2) {
                 document.getElementById('pvp-lobby').style.display = 'none';
                 window.startPvPGame();
             }
-        }).on('presence', { event: 'leave' }, ({ leftPresences }) => { 
+        }).on('presence', { event: 'leave' }, () => { 
             if (window.isPvPMode) { 
                 alert(`Opponent disconnected! You win by default.`); 
                 window.endPvPGame(true); 
             } 
         }).on('broadcast', { event: 'game_over' }, (payload) => {
-            // Listener untuk mendeteksi jika lawan sudah menang duluan
-            if (payload.winner !== window.currentUser) {
-                window.endPvPGame(false); 
-            }
+            if (payload.winner !== window.currentUser) { window.endPvPGame(false); }
+        }).on('broadcast', { event: 'player_ready' }, (payload) => {
+            console.log("Opponent is ready!");
+            window.opponentReady = true;
+            checkBothReady();
         }).subscribe(async (status) => { 
-            if (status === 'SUBSCRIBED') { 
-                await window.pvpChannel.track({ online_at: new Date().toISOString() }); 
-            } 
+            if (status === 'SUBSCRIBED') { await window.pvpChannel.track({ online_at: new Date().toISOString() }); } 
         });
-    }; // Penutup fungsi connectToChannel yang benar
+
+        function checkBothReady() {
+            if (window.isReady && window.opponentReady) {
+                if(window.currentCountdown) clearInterval(window.currentCountdown);
+                window.finalizeDeckAndBattle();
+            }
+        }
+    };
     
 
     window.startPvPGame = function() {
-    // UI: Setup Deck Builder
-    document.getElementById('pvp-lobby').style.display = 'none';
-    document.getElementById('deck-menu').style.display = 'flex';
-    
-    window.isPvPMode = true;
-    window.pvpTimer = 60;
-    window.isReady = false;
-    window.opponentReady = false;
+        document.getElementById('pvp-lobby').style.display = 'none';
+        document.getElementById('deck-menu').style.display = 'flex';
+        window.isPvPMode = true;
+        window.pvpTimer = 60;
+        window.isReady = false;
+        window.opponentReady = false;
 
-    // Timer Display
-    let timerDisplay = document.getElementById('pvp-timer-display') || document.createElement('div');
-    timerDisplay.id = 'pvp-timer-display';
-    timerDisplay.style = "position:fixed; top:20px; right:20px; font-size:24px; color:yellow; font-weight:bold; z-index:9999;";
-    document.body.appendChild(timerDisplay);
-    timerDisplay.style.display = 'block';
+        let timerDisplay = document.getElementById('pvp-timer-display') || document.createElement('div');
+        timerDisplay.id = 'pvp-timer-display';
+        timerDisplay.style = "position:fixed; top:20px; right:20px; font-size:24px; color:yellow; font-weight:bold; z-index:9999;";
+        document.body.appendChild(timerDisplay);
+        timerDisplay.style.display = 'block';
 
-    // Timer Countdown
-    const countdown = setInterval(() => {
-        window.pvpTimer--;
-        timerDisplay.innerText = `Time Left: ${window.pvpTimer}s`;
+        window.currentCountdown = setInterval(() => {
+            window.pvpTimer--;
+            timerDisplay.innerText = `Time Left: ${window.pvpTimer}s`;
+            if (window.pvpTimer <= 0) {
+                clearInterval(window.currentCountdown);
+                window.finalizeDeckAndBattle();
+            }
+        }, 1000);
 
-        if (window.pvpTimer <= 0) {
-            clearInterval(countdown);
-            window.finalizeDeckAndBattle();
-        }
-    }, 1000);
-    window.currentCountdown = countdown;
-
-    // Ready Button Logic
-    let readyBtn = document.getElementById('ready-btn') || document.createElement('button');
-    readyBtn.id = 'ready-btn';
-    readyBtn.innerText = "READY";
-    document.getElementById('deck-menu').appendChild(readyBtn);
-    readyBtn.onclick = () => {
-        window.isReady = true;
-        readyBtn.disabled = true;
-        readyBtn.innerText = "WAITING FOR OPPONENT...";
+        let readyBtn = document.getElementById('ready-btn') || document.createElement('button');
+        readyBtn.id = 'ready-btn';
+        readyBtn.innerText = "READY";
+        readyBtn.disabled = false;
+        document.getElementById('deck-menu').appendChild(readyBtn);
         
-        // Broadcast to opponent that we are ready
-        window.pvpChannel.send({
-            type: 'broadcast',
-            event: 'player_ready',
-            payload: { user: window.currentUser }
-        });
-        
-        checkBothReady();
+        readyBtn.onclick = () => {
+            if(window.selectedLibrary.length < 8) {
+                alert("Please select 8 cards first!");
+                return;
+            }
+            window.isReady = true;
+            readyBtn.disabled = true;
+            readyBtn.innerText = "WAITING FOR OPPONENT...";
+            window.pvpChannel.send({ type: 'broadcast', event: 'player_ready', payload: { user: window.currentUser } });
+            
+            // Re-check in case opponent ready first
+            if (window.isReady && window.opponentReady) {
+                clearInterval(window.currentCountdown);
+                window.finalizeDeckAndBattle();
+            }
+        };
     };
 
-    // Listen for Opponent Ready
-    window.pvpChannel.on('broadcast', { event: 'player_ready' }, (payload) => {
-        console.log("Opponent is ready!");
-        window.opponentReady = true;
-        checkBothReady();
-    });
-
-    function checkBothReady() {
-        if (window.isReady && window.opponentReady) {
-            clearInterval(window.currentCountdown);
-            window.finalizeDeckAndBattle();
-        }
-    }
-};
     // UI: Tampilkan menu deck, sembunyikan lobby
     document.getElementById('pvp-lobby').style.display = 'none';
     document.getElementById('deck-menu').style.display = 'flex';
@@ -797,26 +787,25 @@ try {
 };
 
 window.finalizeDeckAndBattle = function() {
-    // Auto-fill deck if less than 5 cards
-    if (window.selectedDeck.length < 5) {
-        const remaining = 5 - window.selectedDeck.length;
-        for (let i = 0; i < remaining; i++) {
-            const randomCard = window.userInventory[Math.floor(Math.random() * window.userInventory.length)];
-            window.selectedDeck.push(randomCard);
+        // Fix: Use selectedLibrary as defined in your global variables
+        if (window.selectedLibrary.length < 8) {
+            const remaining = 8 - window.selectedLibrary.length;
+            for (let i = 0; i < remaining; i++) {
+                const randomCard = window.inventory[Math.floor(Math.random() * window.inventory.length)];
+                window.selectedLibrary.push(randomCard);
+            }
         }
-    }
 
-    // Hide UI
-    document.getElementById('pvp-timer-display').style.display = 'none';
-    document.getElementById('deck-menu').style.display = 'none';
-    document.getElementById('start-screen').style.display = 'none';
-    document.getElementById('main-game').style.display = 'flex';
-    document.getElementById('battle-log').style.display = 'flex';
-    
-    // Start PvP Game (Campaign Point Protection)
-    window.logAction("Battle Started! Points are disabled in PvP.", "system");
-    window.startGame(); 
-};
+        if(document.getElementById('pvp-timer-display')) document.getElementById('pvp-timer-display').style.display = 'none';
+        document.getElementById('deck-menu').style.display = 'none';
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('main-game').style.display = 'flex';
+        document.getElementById('battle-log').style.display = 'flex';
+        document.getElementById('battle-log-content').innerHTML = '';
+        
+        window.logAction("PvP Battle Started! Points are disabled.", "system");
+        window.startGame(); 
+    };
 
     // Sembunyikan semua menu, masuk ke Arena
     document.getElementById('deck-menu').style.display = 'none';
