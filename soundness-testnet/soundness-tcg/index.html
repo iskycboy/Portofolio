@@ -910,6 +910,8 @@ window.startPvPGame = function() {
             }
         }
         modal.style.display = 'flex';
+
+        window.processRankResult(isWin);
     };
 
     window.surrenderGame = function() {
@@ -1391,49 +1393,72 @@ window.startPvPGame = function() {
         window.safePlay(isWin ? window.sfxWin : window.sfxLose);
 
         let prevPoints = window.rankData.points; let change = 0; let rewardText = ""; let rankUpOccurred = false;
+        let fillBar = document.getElementById('result-progress-fill'); 
+        let textBar = document.getElementById('result-progress-text');
+        let progressBarContainer = fillBar.parentElement; 
 
-        if (isWin) {
-            window.rankData.streak++; change = 25 + (window.rankData.streak >= 3 ? 15 : 0); window.rankData.points += change;
-            rewardText = "VICTORY! Collect 100 Rank Points to Rank Up!";
+        if (window.isPvPMode) {
+            // MODE PVP: Sembunyikan elemen Rank & Progress Bar
+            rewardText = "PvP Match Completed.";
+            document.getElementById('result-rank-info').style.display = 'none';
+            progressBarContainer.style.display = 'none';
             
-            if (window.rankData.points >= 100 && window.rankData.tierIdx < 6) {
-                window.rankData.tierIdx++; window.rankData.points = 0; rankUpOccurred = true;
-                let b = [0, 3, 5, 8, 12, 15, 20][window.rankData.tierIdx]; 
-                if(b > 0) { 
-                    let rankUpCards = window.getRandomNewCard(b, window.rankData.tierIdx); 
-                    rewardText = `RANK UP TO ${window.TIER_NAMES[window.rankData.tierIdx]}! Got ${b} New Cards!`; 
-                }
-            } else if (window.rankData.tierIdx >= 6) { 
-                window.rankData.points = 100; 
-                rewardText = "YOU ARE THE ABYSSAL GOD!";
-            }
+            if (window.pvpChannel) window.pvpChannel.send({ type: 'broadcast', event: 'game_over', payload: { winner: isWin ? window.currentUser : 'opponent' } });
         } else {
-            window.rankData.streak = 0;
-            if (window.rankData.tierIdx >= 3) { change = -20; window.rankData.points += change; if (window.rankData.points < 0) { window.rankData.tierIdx--; window.rankData.points = 80; rankUpOccurred = true; } }
-            rewardText = "Keep practicing!";
+            // MODE CAMPAIGN: Tampilkan elemen Rank
+            document.getElementById('result-rank-info').style.display = 'block';
+            progressBarContainer.style.display = 'block';
+
+            if (isWin) {
+                window.rankData.streak++; change = 25 + (window.rankData.streak >= 3 ? 15 : 0); window.rankData.points += change;
+                rewardText = "VICTORY! Collect 100 Rank Points to Rank Up!";
+                if (window.rankData.points >= 100 && window.rankData.tierIdx < 6) {
+                    window.rankData.tierIdx++; window.rankData.points = 0; rankUpOccurred = true;
+                    let b = [0, 3, 5, 8, 12, 15, 20][window.rankData.tierIdx]; 
+                    if(b > 0) { let rankUpCards = window.getRandomNewCard(b, window.rankData.tierIdx); rewardText = `RANK UP TO ${window.TIER_NAMES[window.rankData.tierIdx]}! Got ${b} New Cards!`; }
+                } else if (window.rankData.tierIdx >= 6) { window.rankData.points = 100; rewardText = "YOU ARE THE ABYSSAL GOD!"; }
+            } else {
+                window.rankData.streak = 0;
+                if (window.rankData.tierIdx >= 3) { change = -20; window.rankData.points += change; if (window.rankData.points < 0) { window.rankData.tierIdx--; window.rankData.points = 80; rankUpOccurred = true; } }
+                rewardText = "Keep practicing!";
+            }
+            window.saveUserData(); 
         }
         
-        window.saveUserData(); 
-        
         document.getElementById('battle-result').style.display = "flex";
-        document.getElementById('result-title').textContent = isWin ? (rankUpOccurred ? "RANK UP!" : "CAMPAIGN CLEARED") : "DEFEAT";
-        document.getElementById('result-title').style.color = isWin ? (rankUpOccurred ? "#ffd700" : "#00f2ff") : "#ff3e3e";
-        document.getElementById('result-rank-info').textContent = `Rank Points: ${change > 0 ? '+' : ''}${change} | Stage: ${window.TIER_NAMES[window.rankData.tierIdx]}`;
+        
+        if (window.isPvPMode) {
+            document.getElementById('result-title').textContent = isWin ? "VICTORY" : "DEFEAT";
+            document.getElementById('result-title').style.color = isWin ? "#00f2ff" : "#ff3e3e";
+        } else {
+            document.getElementById('result-title').textContent = isWin ? (rankUpOccurred ? "RANK UP!" : "CAMPAIGN CLEARED") : "DEFEAT";
+            document.getElementById('result-title').style.color = isWin ? (rankUpOccurred ? "#ffd700" : "#00f2ff") : "#ff3e3e";
+            document.getElementById('result-rank-info').textContent = `Rank Points: ${change > 0 ? '+' : ''}${change} | Stage: ${window.TIER_NAMES[window.rankData.tierIdx]}`;
+        }
+        
         document.getElementById('reward-info').textContent = rewardText;
 
         let btnContinue = document.getElementById('btn-continue');
-        if(isWin) { btnContinue.textContent = "NEXT BATTLE"; btnContinue.style.background = "var(--aqua)"; btnContinue.style.color = "#000";
-        } else { btnContinue.textContent = "RETRY BATTLE"; btnContinue.style.background = "var(--damage)"; btnContinue.style.color = "#fff"; }
+        if (window.isPvPMode) {
+            btnContinue.textContent = "LEAVE MATCH"; 
+            btnContinue.style.background = "var(--aqua)"; btnContinue.style.color = "#000";
+            // Memaksa reload agar status PvP bersih setelah keluar arena
+            btnContinue.onclick = () => location.reload(); 
+        } else {
+            if(isWin) { btnContinue.textContent = "NEXT BATTLE"; btnContinue.style.background = "var(--aqua)"; btnContinue.style.color = "#000"; } 
+            else { btnContinue.textContent = "RETRY BATTLE"; btnContinue.style.background = "var(--damage)"; btnContinue.style.color = "#fff"; }
+            btnContinue.onclick = () => window.continueCampaign();
+        }
 
-        let fillBar = document.getElementById('result-progress-fill'); let textBar = document.getElementById('result-progress-text');
-        fillBar.style.transition = "none"; fillBar.style.width = (rankUpOccurred && isWin ? 0 : prevPoints) + "%"; 
-        
-        setTimeout(() => {
-            fillBar.style.transition = "width 1s ease-in-out, background 0.3s";
-            let displayPoints = window.rankData.points; if(window.rankData.tierIdx >= 6) displayPoints = 100;
-            fillBar.style.width = displayPoints + "%"; textBar.textContent = `${displayPoints} / 100`;
-            fillBar.style.background = isWin ? "linear-gradient(90deg, #0055ff, #00f2ff)" : "linear-gradient(90deg, #aa0000, #ff3e3e)";
-        }, 100); window.updateRankDashboard();
+        if (!window.isPvPMode) {
+            fillBar.style.transition = "none"; fillBar.style.width = (rankUpOccurred && isWin ? 0 : prevPoints) + "%"; 
+            setTimeout(() => {
+                fillBar.style.transition = "width 1s ease-in-out, background 0.3s";
+                let displayPoints = window.rankData.points; if(window.rankData.tierIdx >= 6) displayPoints = 100;
+                fillBar.style.width = displayPoints + "%"; textBar.textContent = `${displayPoints} / 100`;
+                fillBar.style.background = isWin ? "linear-gradient(90deg, #0055ff, #00f2ff)" : "linear-gradient(90deg, #aa0000, #ff3e3e)";
+            }, 100); window.updateRankDashboard();
+        }
     };
 
     window.initSession();
