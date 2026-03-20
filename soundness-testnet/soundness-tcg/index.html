@@ -693,7 +693,9 @@ try {
 
     window.startPvPGame = function() {
         document.getElementById('pvp-lobby').style.display = 'none';
+        document.getElementById('start-screen').style.display = 'none'; // <-- TAMBAHKAN BARIS INI
         document.getElementById('deck-menu').style.display = 'flex';
+        
         window.isPvPMode = true;
         window.pvpTimer = 60;
         window.isReady = false;
