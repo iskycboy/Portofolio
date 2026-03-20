@@ -615,19 +615,91 @@ try {
             if (status === 'SUBSCRIBED') { await window.pvpChannel.track({ online_at: new Date().toISOString() }); } 
         });
     };
-    window.startPvPGame = function() { 
-        document.getElementById('start-screen').style.display = 'none'; // FIX: Hide Start Screen
-        document.getElementById('deck-menu').style.display = 'none'; 
-        document.getElementById('main-game').style.display = 'flex'; 
-        document.getElementById('battle-log').style.display = 'flex'; 
-        document.getElementById('battle-log-content').innerHTML = ''; 
-        window.logAction(`PvP Match Started! Waiting for deck synchronization...`, "system"); 
-        
-        // Reload board so it's not empty (Adjust with your PvP sync logic later)
-        window.startGame();
-    };
-    window.endPvPGame = async function(isWin) { window.isPvPMode = false; if (window.pvpChannel) await window.supaClient.removeChannel(window.pvpChannel); if (window.isHost) await window.supaClient.from('rooms').delete().eq('id', window.currentRoom); window.processRankResult(isWin);  };
+    window.startPvPGame = function() {
+    // UI: Tampilkan menu deck, sembunyikan lobby
+    document.getElementById('pvp-lobby').style.display = 'none';
+    document.getElementById('deck-menu').style.display = 'flex';
     
+    window.isPvPMode = true;
+    window.pvpTimer = 60; // Set timer 60 detik
+    
+    // Buat elemen visual timer jika belum ada
+    let timerDisplay = document.getElementById('pvp-timer-display');
+    if (!timerDisplay) {
+        timerDisplay = document.createElement('div');
+        timerDisplay.id = 'pvp-timer-display';
+        timerDisplay.style = "position:fixed; top:20px; right:20px; font-size:24px; color:yellow; font-weight:bold; z-index:9999;";
+        document.body.appendChild(timerDisplay);
+    }
+
+    const countdown = setInterval(() => {
+        window.pvpTimer--;
+        timerDisplay.innerText = `Select Cards: ${window.pvpTimer}s`;
+
+        if (window.pvpTimer <= 0) {
+            clearInterval(countdown);
+            timerDisplay.style.display = 'none';
+            window.finalizeDeckAndBattle(); // Masuk arena otomatis
+        }
+    }, 1000);
+
+    // Simpan interval agar bisa dihentikan jika klik "Ready" manual
+    window.currentCountdown = countdown;
+};
+
+window.finalizeDeckAndBattle = function() {
+    // Jika deck belum penuh (misal butuh 5 kartu), acak sisanya
+    if (window.selectedDeck.length < 5) {
+        const remainingNeeded = 5 - window.selectedDeck.length;
+        for (let i = 0; i < remainingNeeded; i++) {
+            const randomCard = window.userInventory[Math.floor(Math.random() * window.userInventory.length)];
+            window.selectedDeck.push(randomCard);
+        }
+    }
+
+    // Sembunyikan semua menu, masuk ke Arena
+    document.getElementById('deck-menu').style.display = 'none';
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('main-game').style.display = 'flex';
+    document.getElementById('battle-log').style.display = 'flex';
+    
+    document.getElementById('battle-log-content').innerHTML = '';
+    window.logAction("PvP Battle Started! Good luck!", "system");
+    
+    // Mulai game tanpa mengganggu poin Campaign
+    window.startGame(); 
+};
+    window.endPvPGame = async function(isWin) {
+
+    if (window.isPvPMode) {
+
+        // Logika Menang/Kalah untuk PvP (Hanya teks/pesan)
+
+        const msg = isWin ? "You Won the PvP Match!" : "You Lost the PvP Match!";
+
+        alert(msg);
+
+        window.logAction(msg, "system");
+
+        
+
+        // PENTING: Jangan panggil fungsi updateRank() di sini jika PvP
+
+        // Langsung reset ke menu utama
+
+        location.reload(); 
+
+    } else {
+
+        // Logika Campaign (Poin tetap bertambah)
+
+        if (isWin) await window.updateRank(10); 
+
+        alert("Campaign Match Over!");
+
+    }
+
+};
     window.surrenderGame = function() { 
         if(confirm("Are you sure you want to surrender?")) { 
             if (window.isPvPMode) { window.endPvPGame(false); } 
