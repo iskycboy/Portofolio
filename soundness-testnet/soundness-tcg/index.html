@@ -199,6 +199,58 @@
     background: #555;
     cursor: not-allowed;
 }
+
+/* Container Result Modal */
+#game-result-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(10px);
+}
+
+/* Teks Utama (Victory/Defeat) */
+#result-title {
+    font-size: 80px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 10px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 20px currentColor;
+}
+
+.victory-text { color: #00ffcc; filter: drop-shadow(0 0 15px #00ffcc); }
+.defeat-text { color: #ff3366; filter: drop-shadow(0 0 15px #ff3366); }
+
+/* Pesan Tambahan */
+#result-message {
+    color: white;
+    font-size: 18px;
+    margin-bottom: 30px;
+    opacity: 0.8;
+}
+
+/* Tombol Kembali */
+.result-btn {
+    padding: 15px 40px;
+    background: transparent;
+    border: 2px solid white;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+}
+
+.result-btn:hover {
+    background: white;
+    color: black;
+    box-shadow: 0 0 20px rgba(255,255,255,0.5);
+}
 </style>
 </head>
 <body id="main-body">
@@ -341,6 +393,12 @@
             <div id="hand"></div>
         </div>
     </div>
+</div>
+
+<div id="game-result-modal">
+    <h1 id="result-title">VICTORY</h1>
+    <p id="result-message">PvP Match Completed. No rank points affected.</p>
+    <button class="result-btn" onclick="location.reload()">Back to Menu</button>
 </div>
 
 <script>
@@ -629,7 +687,15 @@ try {
         }).subscribe(async (status) => { 
             if (status === 'SUBSCRIBED') { await window.pvpChannel.track({ online_at: new Date().toISOString() }); } 
         });
+
+        window.pvpChannel.on('broadcast', { event: 'game_over' }, (payload) => {
+    // Jika lawan menang, berarti kita kalah
+    if (payload.winner !== window.currentUser) {
+        window.endGame(false); 
+    }
     };
+    
+
     window.startPvPGame = function() {
     // UI: Setup Deck Builder
     document.getElementById('pvp-lobby').style.display = 'none';
@@ -725,14 +791,26 @@ try {
 };
 
 window.finalizeDeckAndBattle = function() {
-    // Jika deck belum penuh (misal butuh 5 kartu), acak sisanya
+    // Auto-fill deck if less than 5 cards
     if (window.selectedDeck.length < 5) {
-        const remainingNeeded = 5 - window.selectedDeck.length;
-        for (let i = 0; i < remainingNeeded; i++) {
+        const remaining = 5 - window.selectedDeck.length;
+        for (let i = 0; i < remaining; i++) {
             const randomCard = window.userInventory[Math.floor(Math.random() * window.userInventory.length)];
             window.selectedDeck.push(randomCard);
         }
     }
+
+    // Hide UI
+    document.getElementById('pvp-timer-display').style.display = 'none';
+    document.getElementById('deck-menu').style.display = 'none';
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('main-game').style.display = 'flex';
+    document.getElementById('battle-log').style.display = 'flex';
+    
+    // Start PvP Game (Campaign Point Protection)
+    window.logAction("Battle Started! Points are disabled in PvP.", "system");
+    window.startGame(); 
+};
 
     // Sembunyikan semua menu, masuk ke Arena
     document.getElementById('deck-menu').style.display = 'none';
@@ -745,43 +823,41 @@ window.finalizeDeckAndBattle = function() {
     
     // Mulai game tanpa mengganggu poin Campaign
     window.startGame(); 
-};
+
     window.endPvPGame = async function(isWin) {
 
+    const modal = document.getElementById('game-result-modal');
+    const title = document.getElementById('result-title');
+    const message = document.getElementById('result-message');
+
     if (window.isPvPMode) {
-
-        // Logika Menang/Kalah untuk PvP (Hanya teks/pesan)
-
-        const msg = isWin ? "You Won the PvP Match!" : "You Lost the PvP Match!";
-
-        alert(msg);
-
-        window.logAction(msg, "system");
-
+        // Tampilan PvP
+        title.innerText = isWin ? "VICTORY" : "DEFEAT";
+        title.className = isWin ? "victory-text" : "defeat-text";
+        message.innerText = "PvP Match Completed. No rank points affected.";
         
-
-        // PENTING: Jangan panggil fungsi updateRank() di sini jika PvP
-
-        // Langsung reset ke menu utama
-
-        location.reload(); 
-
+        // Broadcast ke lawan bahwa game selesai (jika belum)
+        window.pvpChannel.send({
+            type: 'broadcast',
+            event: 'game_over',
+            payload: { winner: isWin ? window.currentUser : 'opponent' }
+        });
     } else {
-
-        // Logika Campaign (Poin tetap bertambah)
-
-        if (isWin) await window.updateRank(10); 
-
-        alert("Campaign Match Over!");
-
+        // Tampilan Campaign (Tambah Poin)
+        if (isWin) {
+            await window.updateRank(10);
+            title.innerText = "VICTORY";
+            title.className = "victory-text";
+            message.innerText = "Campaign Mode: +10 Rank Points Earned!";
+        } else {
+            title.innerText = "DEFEAT";
+            title.className = "defeat-text";
+            message.innerText = "Better luck next time, Challenger.";
+        }
     }
 
-};
-    window.surrenderGame = function() { 
-        if(confirm("Are you sure you want to surrender?")) { 
-            if (window.isPvPMode) { window.endPvPGame(false); } 
-            else { window.processRankResult(false); } 
-        } 
+    // Tampilkan Modal
+    modal.style.display = 'flex';
     };
 
     window.getEnemyCardByTier = function() {
@@ -1219,5 +1295,6 @@ window.finalizeDeckAndBattle = function() {
     document.getElementById('loading-screen').innerHTML = `<span style="color:#ff3e3e">FATAL CRASH: ${e.message}</span>`;
 }
 </script>
+
 </body>
 </html>
