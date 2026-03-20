@@ -686,7 +686,11 @@ try {
                 if(window.currentCountdown) clearInterval(window.currentCountdown);
                 window.finalizeDeckAndBattle();
             }
-        }).subscribe(async (status) => { 
+        }).on('broadcast', { event: 'pass_turn' }, () => {
+            window.logAction("Opponent ended their turn. It's your turn!", "system");
+            window.startPlayerTurn();
+        // ---> SAMPAI SINI <---
+        }).subscribe(async (status) => {
             if (status === 'SUBSCRIBED') { await window.pvpChannel.track({ online_at: new Date().toISOString() }); } 
         });
     };
@@ -808,19 +812,38 @@ try {
         document.getElementById('deck-menu').style.display = 'none'; document.getElementById('main-game').style.display = 'flex'; document.getElementById('battle-log').style.display = 'flex'; document.getElementById('battle-log-content').innerHTML = ''; 
         for (let i = 0; i < 3; i++) { let mSlot = document.getElementById('m-' + i); if (mSlot) mSlot.innerHTML = ""; let eSlot = document.getElementById('e-' + i); if (eSlot) eSlot.innerHTML = ""; }
         for (let i = 0; i < 2; i++) { let sSlot = document.getElementById('s-' + i); if (sSlot) sSlot.innerHTML = ""; }
-        document.getElementById('hand').innerHTML = ""; window.bonusAtk = 0; window.enemyMaxHP = window.TIER_LP[window.rankData.tierIdx] || 4000; window.enemyHP = window.enemyMaxHP; window.playerHP = 4000; window.playerGraveyard = []; window.enemyGraveyard = []; window.playerFatigue = 0; window.enemyFatigueCounter = 0; window.activeTrap = null;
+        document.getElementById('hand').innerHTML = ""; window.bonusAtk = 0; 
+        
+        window.enemyMaxHP = window.isPvPMode ? 4000 : (window.TIER_LP[window.rankData.tierIdx] || 4000); 
+        window.enemyHP = window.enemyMaxHP; window.playerHP = 4000; window.playerGraveyard = []; window.enemyGraveyard = []; window.playerFatigue = 0; window.enemyFatigueCounter = 0; window.activeTrap = null;
+        
         function getShuffledLayer() { let layer = JSON.parse(JSON.stringify(window.selectedLibrary)); for (let i = layer.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); [layer[i], layer[j]] = [layer[j], layer[i]]; } return layer; }
         window.gameDeck = [...getShuffledLayer(), ...getShuffledLayer(), ...getShuffledLayer()]; window.handCards = []; for(let i=0; i<4; i++) { if(window.gameDeck.length > 0) window.handCards.push(window.gameDeck.pop()); }
         window.renderHand(); 
-        const bossName = window.TIER_BOSSES[window.rankData.tierIdx] || "ABYSSAL BOSS"; document.getElementById('boss-name-display').textContent = bossName;
-        const eSlot = document.getElementById('e-1'); const eCard = document.createElement('div'); eCard.className = 'card monster'; eCard.id = 'enemy-boss-card'; 
-        let bossImgs = ['images/monster21.png', 'images/monster12.png', 'images/monster8.png', 'images/monster15.png', 'images/monster35.png', 'images/monster38.png', 'images/monster39.png'];
-        eCard.style.backgroundImage = `url('${bossImgs[window.rankData.tierIdx] || 'images/monster39.png'}')`; 
-        let bAtk = 600 * window.TIER_DMG_MULT[window.rankData.tierIdx || 0]; let bDef = 500 * window.TIER_DMG_MULT[window.rankData.tierIdx || 0];
-        eCard.dataset.cardAtk = bAtk; eCard.dataset.cardDef = bDef; eCard.dataset.cardName = bossName; eCard.dataset.passive = ""; eCard.dataset.uid = Math.random(); eCard.dataset.pos = "attack";
-        eCard.innerHTML = `<div class="stat-box" style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.8);padding:2px 4px;font-size:9px;color:var(--damage);border-radius:3px;">ATK ${bAtk}</div>`;
-        eSlot.appendChild(eCard);
-        window.manageEnemyField(false); window.logAction(`Campaign Stage: ${window.TIER_NAMES[window.rankData.tierIdx] || 'ROOKIE'} started.`, "system"); window.updateUI(); window.startPlayerTurn();
+        
+        if (!window.isPvPMode) {
+            // CAMPAIGN MODE (SPAWN AI)
+            const bossName = window.TIER_BOSSES[window.rankData.tierIdx] || "ABYSSAL BOSS"; document.getElementById('boss-name-display').textContent = bossName;
+            const eSlot = document.getElementById('e-1'); const eCard = document.createElement('div'); eCard.className = 'card monster'; eCard.id = 'enemy-boss-card'; 
+            let bossImgs = ['images/monster21.png', 'images/monster12.png', 'images/monster8.png', 'images/monster15.png', 'images/monster35.png', 'images/monster38.png', 'images/monster39.png'];
+            eCard.style.backgroundImage = `url('${bossImgs[window.rankData.tierIdx] || 'images/monster39.png'}')`; 
+            let bAtk = 600 * window.TIER_DMG_MULT[window.rankData.tierIdx || 0]; let bDef = 500 * window.TIER_DMG_MULT[window.rankData.tierIdx || 0];
+            eCard.dataset.cardAtk = bAtk; eCard.dataset.cardDef = bDef; eCard.dataset.cardName = bossName; eCard.dataset.passive = ""; eCard.dataset.uid = Math.random(); eCard.dataset.pos = "attack";
+            eCard.innerHTML = `<div class="stat-box" style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.8);padding:2px 4px;font-size:9px;color:var(--damage);border-radius:3px;">ATK ${bAtk}</div>`;
+            eSlot.appendChild(eCard);
+            window.manageEnemyField(false); window.logAction(`Campaign Stage: ${window.TIER_NAMES[window.rankData.tierIdx] || 'ROOKIE'} started.`, "system"); window.updateUI(); window.startPlayerTurn();
+        } else {
+            // PVP MODE (MATIKAN AI)
+            document.getElementById('boss-name-display').textContent = "OPPONENT";
+            window.updateUI();
+            if (window.isHost) {
+                window.logAction("You are Host. You move first!", "system");
+                window.startPlayerTurn();
+            } else {
+                window.setPhase("WAITING OPPONENT");
+                window.logAction("Waiting for Host to move...", "system");
+            }
+        }
     };
 
     window.manageEnemyField = function(forceDefense) {
@@ -906,7 +929,14 @@ try {
                 if ((c.dataset.passive || "").includes("[REGENERATION]")) { window.playerHP = Math.min(4000, window.playerHP + 500); window.spawnPopUp("REGEN +500", false, false); window.logAction(`[REGENERATION] ${c.dataset.cardName} restores 500 LP!`, "player"); }
             }); window.updateUI();
         }
-        window.setPhase("ENEMY"); window.logAction("Turn ended.", "system"); window.enemyTurn(); 
+        
+        if (window.isPvPMode) {
+            window.setPhase("WAITING OPPONENT"); 
+            window.logAction("Turn ended. Waiting for opponent...", "system");
+            window.pvpChannel.send({ type: 'broadcast', event: 'pass_turn', payload: {} });
+        } else {
+            window.setPhase("ENEMY"); window.logAction("Turn ended.", "system"); window.enemyTurn(); 
+        }
     };
 
     window.renderHand = function() { const hEl = document.getElementById('hand'); if(!hEl) return; hEl.innerHTML = ""; window.handCards.forEach((card, i) => { if(card) hEl.appendChild(window.createCardUI(card, i, false)); }); };
