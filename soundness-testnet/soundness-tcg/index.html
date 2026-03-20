@@ -184,6 +184,21 @@
         #rank-dashboard div { font-size: 9px !important; margin-top: 0 !important; padding-top: 2px !important;}
         #lore-modal { width: 90%; padding: 15px; } #lore-img { width: 120px; height: 175px; }
     }
+
+    #ready-btn {
+    padding: 15px 30px;
+    background: #00ffcc;
+    color: black;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+#ready-btn:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
 </style>
 </head>
 <body id="main-body">
@@ -616,6 +631,68 @@ try {
         });
     };
     window.startPvPGame = function() {
+    // UI: Setup Deck Builder
+    document.getElementById('pvp-lobby').style.display = 'none';
+    document.getElementById('deck-menu').style.display = 'flex';
+    
+    window.isPvPMode = true;
+    window.pvpTimer = 60;
+    window.isReady = false;
+    window.opponentReady = false;
+
+    // Timer Display
+    let timerDisplay = document.getElementById('pvp-timer-display') || document.createElement('div');
+    timerDisplay.id = 'pvp-timer-display';
+    timerDisplay.style = "position:fixed; top:20px; right:20px; font-size:24px; color:yellow; font-weight:bold; z-index:9999;";
+    document.body.appendChild(timerDisplay);
+    timerDisplay.style.display = 'block';
+
+    // Timer Countdown
+    const countdown = setInterval(() => {
+        window.pvpTimer--;
+        timerDisplay.innerText = `Time Left: ${window.pvpTimer}s`;
+
+        if (window.pvpTimer <= 0) {
+            clearInterval(countdown);
+            window.finalizeDeckAndBattle();
+        }
+    }, 1000);
+    window.currentCountdown = countdown;
+
+    // Ready Button Logic
+    let readyBtn = document.getElementById('ready-btn') || document.createElement('button');
+    readyBtn.id = 'ready-btn';
+    readyBtn.innerText = "READY";
+    document.getElementById('deck-menu').appendChild(readyBtn);
+    readyBtn.onclick = () => {
+        window.isReady = true;
+        readyBtn.disabled = true;
+        readyBtn.innerText = "WAITING FOR OPPONENT...";
+        
+        // Broadcast to opponent that we are ready
+        window.pvpChannel.send({
+            type: 'broadcast',
+            event: 'player_ready',
+            payload: { user: window.currentUser }
+        });
+        
+        checkBothReady();
+    };
+
+    // Listen for Opponent Ready
+    window.pvpChannel.on('broadcast', { event: 'player_ready' }, (payload) => {
+        console.log("Opponent is ready!");
+        window.opponentReady = true;
+        checkBothReady();
+    });
+
+    function checkBothReady() {
+        if (window.isReady && window.opponentReady) {
+            clearInterval(window.currentCountdown);
+            window.finalizeDeckAndBattle();
+        }
+    }
+};
     // UI: Tampilkan menu deck, sembunyikan lobby
     document.getElementById('pvp-lobby').style.display = 'none';
     document.getElementById('deck-menu').style.display = 'flex';
