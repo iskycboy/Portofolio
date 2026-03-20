@@ -1345,7 +1345,12 @@ window.startPvPGame = function() {
                                 if(window.enemyHP <= 0) window.checkWinCondition();
                             }
                         } else {
-                            window.playerHP = Math.max(0, window.playerHP - Math.floor(dmg)); window.updateUI(); window.spawnPopUp(Math.floor(dmg), false, false); document.getElementById('player-ui').classList.add('shake'); window.logAction(`${attackerName} attacked you for ${Math.floor(finalAtk)} damage!`, "enemy");
+                            window.playerHP = Math.max(0, window.playerHP - Math.floor(dmg)); window.updateUI(); window.spawnPopUp(Math.floor(dmg), false, false); document.getElementById('player-ui').classList.add('shake'); 
+                            
+                            // --- BUG DIPERBAIKI DI BARIS BAWAH INI ---
+                            window.logAction(`${attackerName} attacked you for ${Math.floor(dmg)} damage!`, "enemy");
+                            // ------------------------------------------
+                            
                             if(window.playerHP <= 0) window.checkWinCondition();
                         }
                         setTimeout(() => { document.getElementById('player-ui').classList.remove('shake'); if(targetCard) targetCard.classList.remove('shake'); if (window.playerHP <= 0 || window.enemyHP <= 0) { return; } else { setTimeout(() => performEnemyAttack(attackerIndex + 1), 600); } }, 400);
