@@ -12,13 +12,21 @@
         background-size: cover; background-position: center; background-repeat: no-repeat;
         color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh;
     }
-    .auth-box { background: rgba(0,10,25,0.9); border: 2px solid var(--aqua); padding: 30px; border-radius: 15px; box-shadow: var(--glow); text-align: center; width: 300px; }
+    .auth-box { background: rgba(0,10,25,0.9); border: 2px solid var(--aqua); padding: 30px; border-radius: 15px; box-shadow: var(--glow); text-align: center; width: 300px; position: relative; z-index: 10; }
     .start-title { font-size:40px; color:var(--aqua); letter-spacing:5px; text-shadow:var(--glow); margin-top:0; margin-bottom: 20px; }
     .auth-input { width: 100%; padding: 10px; margin: 10px 0; background: #111; color: var(--aqua); border: 1px solid var(--aqua); border-radius: 5px; box-sizing: border-box; text-align: center; font-weight: bold; letter-spacing: 1px; }
     .auth-input:focus { outline: none; box-shadow: 0 0 10px var(--aqua); }
     .btn-play { padding:10px; font-size:16px; background:var(--aqua); color:#000; font-weight:bold; border:none; border-radius:8px; cursor:pointer; width:100%; margin-top: 15px; text-transform:uppercase; transition:0.3s; }
-    .btn-play:hover { box-shadow:0 0 20px var(--aqua); transform:scale(1.05); }
+    .btn-play:hover:not(:disabled) { box-shadow:0 0 20px var(--aqua); transform:scale(1.05); }
+    .btn-play:disabled { opacity: 0.5; cursor: not-allowed; }
     .link { color:var(--gold); font-size:12px; margin-top:15px; cursor:pointer; display:block; text-decoration:none; }
+
+    /* CUSTOM POP-UP CSS */
+    #verify-popup { 
+        display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); 
+        z-index: 9999; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); 
+    }
+    .popup-box { background: var(--deep-blue); border: 2px solid var(--aqua); padding: 30px; border-radius: 10px; text-align: center; box-shadow: var(--glow); max-width: 80%; width: 350px; }
 </style>
 </head>
 <body>
@@ -29,45 +37,86 @@
     <input type="text" id="username" class="auth-input" placeholder="Username (In-Game)" autocomplete="off">
     <input type="email" id="email" class="auth-input" placeholder="Email Address">
     <input type="password" id="password" class="auth-input" placeholder="Password (Min 6 Chars)">
-    <button class="btn-play" onclick="registerUser()">REGISTER</button>
+    <button class="btn-play" id="reg-btn" onclick="registerUser()">REGISTER</button>
     <a href="login.html" class="link">Already have an account? Login here</a>
-    <p id="msg" style="color:var(--damage); font-size:12px; margin-top:10px;"></p>
+    <p id="msg" style="font-size:12px; margin-top:15px; font-weight:bold;"></p>
+</div>
+
+<div id="verify-popup">
+    <div class="popup-box">
+        <h2 style="color: var(--aqua); letter-spacing: 2px; margin-top: 0;">REGISTRATION SUCCESS</h2>
+        <p style="color: #fff; font-size: 14px; line-height: 1.5; margin-bottom: 25px;">
+            Your Diver Profile has been created!<br><br>
+            If email confirmation is required, please check your inbox. Otherwise, you can login directly.
+        </p>
+        <button class="btn-play" onclick="closePopup()">PROCEED TO LOGIN</button>
+    </div>
 </div>
 
 <script>
     const SUPABASE_URL = 'https://nhhqapnuhhvweooeeseh.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_rS96SvJYsuPikvJ8UFblEA_Gzc9gTys';
-    // Mencegah error duplikasi variabel dengan menamakannya "supa"
-    const supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supaClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function registerUser() {
         const username = document.getElementById('username').value.trim();
         const email = document.getElementById('email').value.trim();
         const pass = document.getElementById('password').value;
         const msg = document.getElementById('msg');
+        const btn = document.getElementById('reg-btn');
         
-        if(!username || !email || !pass) { msg.textContent = "Please fill all fields!"; return; }
-        
-        msg.style.color = "var(--aqua)"; msg.textContent = "Creating Diver Profile...";
-        
-        const { data, error } = await supa.auth.signUp({ email: email, password: pass });
-        
-        if (error) {
-            msg.style.color = "var(--damage)"; msg.textContent = error.message;
-        } else if (data.user) {
-            const { error: dbError } = await supa.from('users').insert([{
-                id: data.user.id,
-                username: username,
-                rank: { points: 0, tierIdx: 0, streak: 0 },
-                inventory: [] 
-            }]);
-            
-            if (dbError) {
-                msg.style.color = "var(--damage)"; msg.textContent = "Database Error: " + dbError.message;
-            } else {
-                window.location.href = "index.html";
-            }
+        if(!username || !email || !pass) { 
+            msg.style.color = "var(--damage)";
+            msg.textContent = "Please fill all fields!"; 
+            return; 
         }
+        
+        btn.disabled = true;
+        msg.style.color = "var(--aqua)";
+        msg.textContent = "Registering & Creating Profile...";
+
+        try {
+            // 1. Daftarkan User ke Auth
+            const { data, error } = await supaClient.auth.signUp({ email: email, password: pass });
+            
+            if (error) {
+                msg.style.color = "var(--damage)"; 
+                msg.textContent = error.message;
+                btn.disabled = false;
+                return;
+            } 
+            
+            if (data.user) {
+                // 2. SIMPAN Username ke Tabel Users SECARA SINKRONUS
+                const { error: dbError } = await supaClient.from('users').insert([{
+                    id: data.user.id, 
+                    username: username, 
+                    rank: { points: 0, tierIdx: 0, streak: 0 }, 
+                    inventory: [] 
+                }]);
+
+                if (dbError) {
+                    msg.style.color = "var(--damage)"; 
+                    msg.textContent = "DB Error (Turn Off RLS!): " + dbError.message;
+                    btn.disabled = false;
+                    return;
+                }
+
+                // 3. JIKA BERHASIL, BARU MUNCUL POP-UP
+                msg.textContent = "";
+                document.getElementById('verify-popup').style.display = 'flex';
+                btn.disabled = false;
+            }
+        } catch(e) {
+            msg.style.color = "var(--damage)"; 
+            msg.textContent = "Network Error!";
+            btn.disabled = false;
+        }
+    }
+
+    function closePopup() {
+        document.getElementById('verify-popup').style.display = 'none';
+        window.location.href = "login.html"; 
     }
 </script>
 </body>
