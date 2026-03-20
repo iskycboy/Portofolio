@@ -1490,20 +1490,6 @@ window.startPvPGame = function() {
     document.getElementById('loading-screen').innerHTML = `<span style="color:#ff3e3e">FATAL CRASH: ${e.message}</span>`;
 }
 
-
-    window.unlockAllCardsForContent = function() {
-    // Convert to lowercase to prevent case-sensitive errors (e.g., Iskycboy vs iskycboy)
-    const user = window.currentUser ? window.currentUser.toLowerCase() : "";
-    
-    if (user === "iskycboy") { 
-        window.userLibrary = JSON.parse(JSON.stringify(window.DATABASE_CARDS));
-        window.saveUserData(); 
-        alert("Developer Mode: All cards unlocked strictly for " + window.currentUser + "!");
-        location.reload();
-    } else {
-        alert("Access Denied. You are logged in as: " + window.currentUser);
-    }
-};
 </script>
 </body>
 </html>
