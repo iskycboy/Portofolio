@@ -671,10 +671,12 @@ try {
         if (type === 'host') { window.isHost = true; const { error } = await window.supaClient.from('rooms').insert([{ id: room, host: window.currentUser, status: 'waiting' }]); if (error) { msg.style.color = "var(--damage)"; msg.textContent = "Room ID already exists or Database Error!"; return; } msg.textContent = `Room [${room}] Made! Waiting for the opponent...`; window.connectToChannel(room); } else if (type === 'join') { window.isHost = false; const { data, error } = await window.supaClient.from('rooms').select('*').eq('id', room).single(); if (error || !data) { msg.style.color = "var(--damage)"; msg.textContent = "Room not found!"; return; } if (data.status !== 'waiting') { msg.style.color = "var(--damage)"; msg.textContent = "Room is full / playing!"; return; } await window.supaClient.from('rooms').update({ status: 'playing' }).eq('id', room); msg.textContent = `Joining Room [${room}]...`; window.connectToChannel(room); }
     };
     window.connectToChannel = function(roomId) {
-        window.pvpChannel = window.supaClient.channel(`room_${roomId}`, { config: { presence: { key: window.currentUser } } });
+        window.pvpChannel = window.supaClient.channel(`room_${roomId}`, { 
+            config: { presence: { key: window.currentUser } } 
+        });
+
         window.pvpChannel.on('presence', { event: 'sync' }, () => {
             const state = window.pvpChannel.presenceState();
-            // Fix: Count total connections, not just unique usernames
             let totalConnections = 0;
             for(let key in state) { totalConnections += state[key].length; }
             
@@ -683,17 +685,21 @@ try {
                 window.startPvPGame();
             }
         }).on('presence', { event: 'leave' }, ({ leftPresences }) => { 
-            if (window.isPvPMode) { alert(`Opponent disconnected! You win by default.`); window.endPvPGame(true); } 
+            if (window.isPvPMode) { 
+                alert(`Opponent disconnected! You win by default.`); 
+                window.endPvPGame(true); 
+            } 
+        }).on('broadcast', { event: 'game_over' }, (payload) => {
+            // Listener untuk mendeteksi jika lawan sudah menang duluan
+            if (payload.winner !== window.currentUser) {
+                window.endPvPGame(false); 
+            }
         }).subscribe(async (status) => { 
-            if (status === 'SUBSCRIBED') { await window.pvpChannel.track({ online_at: new Date().toISOString() }); } 
+            if (status === 'SUBSCRIBED') { 
+                await window.pvpChannel.track({ online_at: new Date().toISOString() }); 
+            } 
         });
-
-        window.pvpChannel.on('broadcast', { event: 'game_over' }, (payload) => {
-    // Jika lawan menang, berarti kita kalah
-    if (payload.winner !== window.currentUser) {
-        window.endGame(false); 
-    }
-    };
+    }; // Penutup fungsi connectToChannel yang benar
     
 
     window.startPvPGame = function() {
