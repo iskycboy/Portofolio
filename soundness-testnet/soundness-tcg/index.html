@@ -916,8 +916,12 @@ window.startPvPGame = function() {
 
     window.surrenderGame = function() {
         if(confirm("Are you sure you want to surrender?")) {
-            if(window.isPvPMode) window.endPvPGame(false);
-            else window.checkWinCondition(true); 
+            if(window.isPvPMode) {
+                window.endPvPGame(false);
+            } else {
+                window.logAction("Diver surrendered...", "enemy");
+                window.processRankResult(false); 
+            }
         }
     };
 
