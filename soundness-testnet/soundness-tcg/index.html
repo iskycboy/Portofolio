@@ -1489,6 +1489,19 @@ window.startPvPGame = function() {
 } catch(e) {
     document.getElementById('loading-screen').innerHTML = `<span style="color:#ff3e3e">FATAL CRASH: ${e.message}</span>`;
 }
+
+    window.unlockAllCardsForContent = function() {
+        // Checks if the logged-in user is exactly 'iskycboy'
+        if (window.currentUser === "iskycboy") { 
+            // Copies all cards from the main database to the player's library
+            window.userLibrary = JSON.parse(JSON.stringify(window.DATABASE_CARDS));
+            window.saveUserData(); // Saves to Supabase/Local storage
+            alert("Developer Mode: All cards unlocked for " + window.currentUser + "!");
+            location.reload();
+        } else {
+            console.log("Access denied. This feature is for the content creator only.");
+        }
+    };
 </script>
 </body>
 </html>
