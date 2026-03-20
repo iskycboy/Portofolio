@@ -1058,18 +1058,30 @@ window.startPvPGame = function() {
 
     window.endTurn = function() { 
         window.safePlay(window.sfxEndBtn);
+        
+        // Cek efek Regen di akhir giliran
         if (window.playerHP > 0 && window.enemyHP > 0) {
             document.querySelectorAll('#player-ui .card').forEach(c => {
-                if ((c.dataset.passive || "").includes("[REGENERATION]")) { window.playerHP = Math.min(4000, window.playerHP + 500); window.spawnPopUp("REGEN +500", false, false); window.logAction(`[REGENERATION] ${c.dataset.cardName} restores 500 LP!`, "player"); }
-            }); window.updateUI();
+                if ((c.dataset.passive || "").includes("[REGENERATION]")) { 
+                    window.playerHP = Math.min(4000, window.playerHP + 500); 
+                    window.spawnPopUp("REGEN +500", false, false); 
+                    window.logAction(`[REGENERATION] ${c.dataset.cardName} restores 500 LP!`, "player"); 
+                }
+            }); 
+            window.updateUI();
         }
         
+        // LOGIKA PEMISAH PVP DAN CAMPAIGN
         if (window.isPvPMode) {
             window.setPhase("WAITING OPPONENT"); 
             window.logAction("Turn ended. Waiting for opponent...", "system");
-            window.pvpChannel.send({ type: 'broadcast', event: 'pass_turn', payload: {} });
+            
+            // Kirim sinyal oper giliran ke lawan
+            window.pvpChannel.send({ type: 'broadcast', event: 'pass_turn', payload: { status: "done" } });
         } else {
-            window.setPhase("ENEMY"); window.logAction("Turn ended.", "system"); window.enemyTurn(); 
+            window.setPhase("ENEMY"); 
+            window.logAction("Turn ended.", "system"); 
+            window.enemyTurn(); 
         }
     };
 
