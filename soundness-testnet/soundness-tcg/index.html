@@ -753,9 +753,13 @@ try {
         });
     };
 
-    window.startPvPGame = function() {
+    
+window.startPvPGame = function() {
+        // PERBAIKAN: Sembunyikan Start Screen & PvP Lobby, Tampilkan Deck Menu
+        document.getElementById('start-screen').style.display = 'none'; 
         document.getElementById('pvp-lobby').style.display = 'none';
         document.getElementById('deck-menu').style.display = 'flex';
+        
         window.isPvPMode = true;
         window.pvpTimer = 60;
         window.isReady = false;
