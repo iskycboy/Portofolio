@@ -594,14 +594,38 @@ try {
     window.openPvPLobby = function() { window.isPvPMode = true; document.getElementById('pvp-lobby').style.display = 'flex'; document.getElementById('ws-msg').textContent = ''; document.getElementById('room-id').value = Math.random().toString(36).substring(2, 7).toUpperCase(); };
     window.simulatePvPConnection = async function(type) {
         const room = document.getElementById('room-id').value.trim().toUpperCase(); const msg = document.getElementById('ws-msg');
-        if(!room) { msg.textContent = "Please enter a Room ID."; return; } msg.style.color = "var(--aqua)"; msg.textContent = "Menghubungkan ke Server..."; window.currentRoom = room;
-        if (type === 'host') { window.isHost = true; const { error } = await window.supaClient.from('rooms').insert([{ id: room, host: window.currentUser, status: 'waiting' }]); if (error) { msg.style.color = "var(--damage)"; msg.textContent = "Room ID sudah ada atau Error Database!"; return; } msg.textContent = `Room [${room}] dibuat! Menunggu lawan...`; window.connectToChannel(room); } else if (type === 'join') { window.isHost = false; const { data, error } = await window.supaClient.from('rooms').select('*').eq('id', room).single(); if (error || !data) { msg.style.color = "var(--damage)"; msg.textContent = "Room tidak ditemukan!"; return; } if (data.status !== 'waiting') { msg.style.color = "var(--damage)"; msg.textContent = "Room sudah penuh / sedang bermain!"; return; } await window.supaClient.from('rooms').update({ status: 'playing' }).eq('id', room); msg.textContent = `Memasuki Room [${room}]...`; window.connectToChannel(room); }
+        if(!room) { msg.textContent = "Please enter a Room ID."; return; } msg.style.color = "var(--aqua)"; msg.textContent = "Connecting to Server..."; window.currentRoom = room;
+        if (type === 'host') { window.isHost = true; const { error } = await window.supaClient.from('rooms').insert([{ id: room, host: window.currentUser, status: 'waiting' }]); if (error) { msg.style.color = "var(--damage)"; msg.textContent = "Room ID already exists or Database Error!"; return; } msg.textContent = `Room [${room}] Made! Waiting for the opponent...`; window.connectToChannel(room); } else if (type === 'join') { window.isHost = false; const { data, error } = await window.supaClient.from('rooms').select('*').eq('id', room).single(); if (error || !data) { msg.style.color = "var(--damage)"; msg.textContent = "Room not found!"; return; } if (data.status !== 'waiting') { msg.style.color = "var(--damage)"; msg.textContent = "Room is full / playing!"; return; } await window.supaClient.from('rooms').update({ status: 'playing' }).eq('id', room); msg.textContent = `Joining Room [${room}]...`; window.connectToChannel(room); }
     };
     window.connectToChannel = function(roomId) {
         window.pvpChannel = window.supaClient.channel(`room_${roomId}`, { config: { presence: { key: window.currentUser } } });
-        window.pvpChannel.on('presence', { event: 'sync' }, () => { const state = window.pvpChannel.presenceState(); if (Object.keys(state).length === 2) { document.getElementById('pvp-lobby').style.display = 'none'; window.startPvPGame(); } }).on('presence', { event: 'leave' }, ({ leftPresences }) => { if (window.isPvPMode) { alert(`Lawan terputus dari jaringan! Kamu menang otomatis.`); window.endPvPGame(true); } }).subscribe(async (status) => { if (status === 'SUBSCRIBED') { await window.pvpChannel.track({ online_at: new Date().toISOString() }); } });
+        window.pvpChannel.on('presence', { event: 'sync' }, () => {
+            const state = window.pvpChannel.presenceState();
+            // Fix: Count total connections, not just unique usernames
+            let totalConnections = 0;
+            for(let key in state) { totalConnections += state[key].length; }
+            
+            if (totalConnections >= 2) {
+                document.getElementById('pvp-lobby').style.display = 'none';
+                window.startPvPGame();
+            }
+        }).on('presence', { event: 'leave' }, ({ leftPresences }) => { 
+            if (window.isPvPMode) { alert(`Opponent disconnected! You win by default.`); window.endPvPGame(true); } 
+        }).subscribe(async (status) => { 
+            if (status === 'SUBSCRIBED') { await window.pvpChannel.track({ online_at: new Date().toISOString() }); } 
+        });
     };
-    window.startPvPGame = function() { document.getElementById('deck-menu').style.display = 'none'; document.getElementById('main-game').style.display = 'flex'; document.getElementById('battle-log').style.display = 'flex'; document.getElementById('battle-log-content').innerHTML = ''; window.logAction(`PvP Match Started! Menunggu sinkronisasi deck...`, "system"); };
+    window.startPvPGame = function() { 
+        document.getElementById('start-screen').style.display = 'none'; // FIX: Hide Start Screen
+        document.getElementById('deck-menu').style.display = 'none'; 
+        document.getElementById('main-game').style.display = 'flex'; 
+        document.getElementById('battle-log').style.display = 'flex'; 
+        document.getElementById('battle-log-content').innerHTML = ''; 
+        window.logAction(`PvP Match Started! Waiting for deck synchronization...`, "system"); 
+        
+        // Reload board so it's not empty (Adjust with your PvP sync logic later)
+        window.startGame();
+    };
     window.endPvPGame = async function(isWin) { window.isPvPMode = false; if (window.pvpChannel) await window.supaClient.removeChannel(window.pvpChannel); if (window.isHost) await window.supaClient.from('rooms').delete().eq('id', window.currentRoom); window.processRankResult(isWin);  };
     
     window.surrenderGame = function() { 
