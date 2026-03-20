@@ -711,8 +711,9 @@ try {
             if (window.isPvPMode) { alert(`Opponent disconnected! You win by default.`); window.endPvPGame(true); } 
             
         // PERHATIKAN TAMBAHAN { payload } DI BAWAH INI
-        }).on('broadcast', { event: 'game_over' }, ({ payload }) => {
-            if (payload.winner !== window.currentUser) { window.endPvPGame(false); }
+        }).on('broadcast', { event: 'surrender' }, () => {
+            alert("Opponent surrendered!");
+            window.processRankResult(true);
         }).on('broadcast', { event: 'player_ready' }, ({ payload }) => {
             window.opponentReady = true;
             if (window.isReady && window.opponentReady) {
@@ -917,7 +918,8 @@ window.startPvPGame = function() {
     window.surrenderGame = function() {
         if(confirm("Are you sure you want to surrender?")) {
             if(window.isPvPMode) {
-                window.endPvPGame(false);
+                window.pvpChannel.send({ type: 'broadcast', event: 'surrender', payload: {} });
+                window.processRankResult(false);
             } else {
                 window.logAction("Diver surrendered...", "enemy");
                 window.processRankResult(false); 
@@ -1419,14 +1421,10 @@ window.startPvPGame = function() {
         let progressBarContainer = fillBar.parentElement; 
 
         if (window.isPvPMode) {
-            // MODE PVP: Sembunyikan elemen Rank & Progress Bar
             rewardText = "PvP Match Completed.";
             document.getElementById('result-rank-info').style.display = 'none';
             progressBarContainer.style.display = 'none';
-            
-            if (window.pvpChannel) window.pvpChannel.send({ type: 'broadcast', event: 'game_over', payload: { winner: isWin ? window.currentUser : 'opponent' } });
         } else {
-            // MODE CAMPAIGN: Tampilkan elemen Rank
             document.getElementById('result-rank-info').style.display = 'block';
             progressBarContainer.style.display = 'block';
 
@@ -1463,7 +1461,6 @@ window.startPvPGame = function() {
         if (window.isPvPMode) {
             btnContinue.textContent = "LEAVE MATCH"; 
             btnContinue.style.background = "var(--aqua)"; btnContinue.style.color = "#000";
-            // Memaksa reload agar status PvP bersih setelah keluar arena
             btnContinue.onclick = () => location.reload(); 
         } else {
             if(isWin) { btnContinue.textContent = "NEXT BATTLE"; btnContinue.style.background = "var(--aqua)"; btnContinue.style.color = "#000"; } 
