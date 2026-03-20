@@ -535,20 +535,15 @@ try {
         } catch(e) {}
     };
 
-    // --- REVISI REDIRECT OTOMATIS JIKA BELUM LOGIN ---
     window.initSession = async function() {
         if(!window.supaClient) { window.location.href = 'login.html'; return; }
         try {
             const { data: { user }, error: authError } = await window.supaClient.auth.getUser();
-            // JIKA BELUM LOGIN, PAKSA PINDAH KE LOGIN.HTML
             if (authError || !user) { window.location.href = 'login.html'; return; } 
             
             window.currentUserId = user.id;
-            
-            // Tarik data profil dari database
             let { data, error: dbError } = await window.supaClient.from('users').select('*').eq('id', user.id).single();
             
-            // FITUR AUTO-HEAL: Jika profil tidak ada, buatkan otomatis menggunakan email
             if (!data) {
                 const defaultName = user.email.split('@')[0]; 
                 const newProfile = { id: user.id, username: defaultName, rank: { points: 0, tierIdx: 0, streak: 0 }, inventory: [] };
@@ -670,12 +665,9 @@ try {
         if(!room) { msg.textContent = "Please enter a Room ID."; return; } msg.style.color = "var(--aqua)"; msg.textContent = "Connecting to Server..."; window.currentRoom = room;
         if (type === 'host') { window.isHost = true; const { error } = await window.supaClient.from('rooms').insert([{ id: room, host: window.currentUser, status: 'waiting' }]); if (error) { msg.style.color = "var(--damage)"; msg.textContent = "Room ID already exists or Database Error!"; return; } msg.textContent = `Room [${room}] Made! Waiting for the opponent...`; window.connectToChannel(room); } else if (type === 'join') { window.isHost = false; const { data, error } = await window.supaClient.from('rooms').select('*').eq('id', room).single(); if (error || !data) { msg.style.color = "var(--damage)"; msg.textContent = "Room not found!"; return; } if (data.status !== 'waiting') { msg.style.color = "var(--damage)"; msg.textContent = "Room is full / playing!"; return; } await window.supaClient.from('rooms').update({ status: 'playing' }).eq('id', room); msg.textContent = `Joining Room [${room}]...`; window.connectToChannel(room); }
     };
-   
-    window.connectToChannel = function(roomId) {
-        window.pvpChannel = window.supaClient.channel(`room_${roomId}`, { 
-            config: { presence: { key: window.currentUser } } 
-        });
 
+    window.connectToChannel = function(roomId) {
+        window.pvpChannel = window.supaClient.channel(`room_${roomId}`, { config: { presence: { key: window.currentUser } } });
         window.pvpChannel.on('presence', { event: 'sync' }, () => {
             const state = window.pvpChannel.presenceState();
             let totalConnections = 0;
@@ -685,28 +677,19 @@ try {
                 window.startPvPGame();
             }
         }).on('presence', { event: 'leave' }, () => { 
-            if (window.isPvPMode) { 
-                alert(`Opponent disconnected! You win by default.`); 
-                window.endPvPGame(true); 
-            } 
+            if (window.isPvPMode) { alert(`Opponent disconnected! You win by default.`); window.endPvPGame(true); } 
         }).on('broadcast', { event: 'game_over' }, (payload) => {
             if (payload.winner !== window.currentUser) { window.endPvPGame(false); }
         }).on('broadcast', { event: 'player_ready' }, (payload) => {
-            console.log("Opponent is ready!");
             window.opponentReady = true;
-            checkBothReady();
-        }).subscribe(async (status) => { 
-            if (status === 'SUBSCRIBED') { await window.pvpChannel.track({ online_at: new Date().toISOString() }); } 
-        });
-
-        function checkBothReady() {
             if (window.isReady && window.opponentReady) {
                 if(window.currentCountdown) clearInterval(window.currentCountdown);
                 window.finalizeDeckAndBattle();
             }
-        }
+        }).subscribe(async (status) => { 
+            if (status === 'SUBSCRIBED') { await window.pvpChannel.track({ online_at: new Date().toISOString() }); } 
+        });
     };
-    
 
     window.startPvPGame = function() {
         document.getElementById('pvp-lobby').style.display = 'none';
@@ -744,10 +727,9 @@ try {
             }
             window.isReady = true;
             readyBtn.disabled = true;
-            readyBtn.innerText = "WAITING FOR OPPONENT...";
+            readyBtn.innerText = "WAITING...";
             window.pvpChannel.send({ type: 'broadcast', event: 'player_ready', payload: { user: window.currentUser } });
             
-            // Re-check in case opponent ready first
             if (window.isReady && window.opponentReady) {
                 clearInterval(window.currentCountdown);
                 window.finalizeDeckAndBattle();
@@ -755,39 +737,7 @@ try {
         };
     };
 
-    // UI: Tampilkan menu deck, sembunyikan lobby
-    document.getElementById('pvp-lobby').style.display = 'none';
-    document.getElementById('deck-menu').style.display = 'flex';
-    
-    window.isPvPMode = true;
-    window.pvpTimer = 60; // Set timer 60 detik
-    
-    // Buat elemen visual timer jika belum ada
-    let timerDisplay = document.getElementById('pvp-timer-display');
-    if (!timerDisplay) {
-        timerDisplay = document.createElement('div');
-        timerDisplay.id = 'pvp-timer-display';
-        timerDisplay.style = "position:fixed; top:20px; right:20px; font-size:24px; color:yellow; font-weight:bold; z-index:9999;";
-        document.body.appendChild(timerDisplay);
-    }
-
-    const countdown = setInterval(() => {
-        window.pvpTimer--;
-        timerDisplay.innerText = `Select Cards: ${window.pvpTimer}s`;
-
-        if (window.pvpTimer <= 0) {
-            clearInterval(countdown);
-            timerDisplay.style.display = 'none';
-            window.finalizeDeckAndBattle(); // Masuk arena otomatis
-        }
-    }, 1000);
-
-    // Simpan interval agar bisa dihentikan jika klik "Ready" manual
-    window.currentCountdown = countdown;
-};
-
-window.finalizeDeckAndBattle = function() {
-        // Fix: Use selectedLibrary as defined in your global variables
+    window.finalizeDeckAndBattle = function() {
         if (window.selectedLibrary.length < 8) {
             const remaining = 8 - window.selectedLibrary.length;
             for (let i = 0; i < remaining; i++) {
@@ -807,52 +757,36 @@ window.finalizeDeckAndBattle = function() {
         window.startGame(); 
     };
 
-    // Sembunyikan semua menu, masuk ke Arena
-    document.getElementById('deck-menu').style.display = 'none';
-    document.getElementById('start-screen').style.display = 'none';
-    document.getElementById('main-game').style.display = 'flex';
-    document.getElementById('battle-log').style.display = 'flex';
-    
-    document.getElementById('battle-log-content').innerHTML = '';
-    window.logAction("PvP Battle Started! Good luck!", "system");
-    
-    // Mulai game tanpa mengganggu poin Campaign
-    window.startGame(); 
-
     window.endPvPGame = async function(isWin) {
+        const modal = document.getElementById('game-result-modal');
+        const title = document.getElementById('result-title');
+        const message = document.getElementById('result-message');
 
-    const modal = document.getElementById('game-result-modal');
-    const title = document.getElementById('result-title');
-    const message = document.getElementById('result-message');
-
-    if (window.isPvPMode) {
-        // Tampilan PvP
-        title.innerText = isWin ? "VICTORY" : "DEFEAT";
-        title.className = isWin ? "victory-text" : "defeat-text";
-        message.innerText = "PvP Match Completed. No rank points affected.";
-        
-        // Broadcast ke lawan bahwa game selesai (jika belum)
-        window.pvpChannel.send({
-            type: 'broadcast',
-            event: 'game_over',
-            payload: { winner: isWin ? window.currentUser : 'opponent' }
-        });
-    } else {
-        // Tampilan Campaign (Tambah Poin)
-        if (isWin) {
-            await window.updateRank(10);
-            title.innerText = "VICTORY";
-            title.className = "victory-text";
-            message.innerText = "Campaign Mode: +10 Rank Points Earned!";
+        if (window.isPvPMode) {
+            title.innerText = isWin ? "VICTORY" : "DEFEAT";
+            title.className = isWin ? "victory-text" : "defeat-text";
+            message.innerText = "PvP Match Completed. No rank points affected.";
+            window.pvpChannel.send({ type: 'broadcast', event: 'game_over', payload: { winner: isWin ? window.currentUser : 'opponent' } });
         } else {
-            title.innerText = "DEFEAT";
-            title.className = "defeat-text";
-            message.innerText = "Better luck next time, Challenger.";
+            if (isWin) {
+                await window.updateRank(10);
+                title.innerText = "VICTORY";
+                title.className = "victory-text";
+                message.innerText = "Campaign Mode: +10 Rank Points Earned!";
+            } else {
+                title.innerText = "DEFEAT";
+                title.className = "defeat-text";
+                message.innerText = "Better luck next time, Challenger.";
+            }
         }
-    }
+        modal.style.display = 'flex';
+    };
 
-    // Tampilkan Modal
-    modal.style.display = 'flex';
+    window.surrenderGame = function() {
+        if(confirm("Are you sure you want to surrender?")) {
+            if(window.isPvPMode) window.endPvPGame(false);
+            else window.checkWinCondition(true); 
+        }
     };
 
     window.getEnemyCardByTier = function() {
