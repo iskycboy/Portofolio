@@ -748,6 +748,52 @@ try {
             window.logAction(`Opponent activated Spell: ${payload.card.name}!`, "enemy");
             document.getElementById('preview-panel').classList.add('flash-spell'); 
             setTimeout(() => document.getElementById('preview-panel').classList.remove('flash-spell'), 800);
+
+        }).on('broadcast', { event: 'pvp_attack' }, ({ payload }) => {
+            let attackerCard = document.querySelector(`.card[data-uid="${payload.attackerUid}"]`);
+            let targetCard = payload.targetUid ? document.querySelector(`.card[data-uid="${payload.targetUid}"]`) : document.getElementById('player-ui');
+            
+            if(attackerCard && targetCard) {
+                const rA = attackerCard.getBoundingClientRect();
+                const rB = targetCard.getBoundingClientRect();
+                attackerCard.classList.add('flash-effect'); 
+                setTimeout(() => attackerCard.classList.remove('flash-effect'), 400); 
+                window.playLaserSound();
+                
+                // Gambar tembakan laser dari musuh ke arah kita
+                window.drawEnergyProjectile(rA, rB, "#ffe0e0", "#ff3e3e", () => {
+                    window.playHitSound();
+                    targetCard.classList.add('shake');
+                    setTimeout(() => targetCard.classList.remove('shake'), 400);
+                });
+            }
+        }).on('broadcast', { event: 'trap_triggered' }, () => {
+            if(window.activeTrap && window.activeTrap.el) {
+                window.logAction(`Your Trap Card was triggered and protected you!`, "player"); 
+                window.activeTrap.el.classList.remove('set-down'); window.activeTrap.el.classList.add('flash-effect');
+                setTimeout(() => {
+                    let healAmt = window.activeTrap.cardObj.effectVal !== undefined ? window.activeTrap.cardObj.effectVal : 1500;
+                    if(healAmt > 0) { window.playerHP = Math.min(4000, window.playerHP + healAmt); window.updateUI(); window.spawnPopUp(`TRAP BLOCK! +${healAmt}`, false, false); }
+                    window.activeTrap.el.classList.add('shatter');
+                    setTimeout(() => { window.activeTrap.el.remove(); window.activeTrap = null; window.updateUI(); }, 600); 
+                }, 600);
+            }
+        }).on('broadcast', { event: 'sync_board' }, ({ payload }) => {
+            // Samakan HP persis seperti yang dihitung di layar penyerang
+            window.playerHP = payload.newPlayerHP;
+            window.enemyHP = payload.newEnemyHP;
+            window.updateUI();
+            
+            // Hapus kartu yang sudah dikalahkan
+            payload.deadUIDs.forEach(uid => {
+                let deadCard = document.querySelector(`.card[data-uid="${uid}"]`);
+                if(deadCard && deadCard.dataset.isDead !== "true") {
+                    window.destroyCard(deadCard, deadCard.closest('#player-ui') !== null);
+                }
+            });
+            if (window.playerHP <= 0 || window.enemyHP <= 0) window.checkWinCondition();
+        // ----------------------------------------------------
+        
         }).subscribe(async (status) => { 
             if (status === 'SUBSCRIBED') { await window.pvpChannel.track({ online_at: new Date().toISOString() }); } 
         });
@@ -1110,7 +1156,16 @@ window.startPvPGame = function() {
         if (window.enemyHP <= 0 || window.playerHP <= 0) return;
         let attackerPassive = el.dataset.passive || "";
         if (attackerPassive.includes("[RAGE]")) { atk += (window.playerGraveyard.length * 200); window.logAction(`[RAGE] ${cardName} gains ${window.playerGraveyard.length * 200} ATK!`, "system"); }
-        if (window.enemyActiveTrap) { window.enemyActiveTrap = false; window.logAction("[MASTER AI] Enemy's hidden TRAP blocked your attack!", "enemy"); window.spawnPopUp("TRAP BLOCK!", true, false); el.classList.remove('active-glow'); window.monstersAttacked.set(uid, (window.monstersAttacked.get(uid) || 0) + 1); return; }
+        if (window.enemyActiveTrap) { 
+            window.enemyActiveTrap = false; 
+            window.logAction("Enemy's hidden TRAP blocked your attack!", "enemy"); 
+            window.spawnPopUp("TRAP BLOCK!", true, false); 
+            el.classList.remove('active-glow'); 
+            window.monstersAttacked.set(uid, (window.monstersAttacked.get(uid) || 0) + 1); 
+            // Kirim sinyal bahwa trap musuh berhasil terpancing
+            if(window.isPvPMode) window.pvpChannel.send({ type: 'broadcast', event: 'trap_triggered', payload: {} });
+            return; 
+        }
 
         let enemyDefenders = Array.from(document.querySelectorAll('#e-0 .card.defense-mode, #e-2 .card.defense-mode, #e-1 .card.defense-mode')).filter(c => c.dataset.isDead !== "true");
         let enemyAttackers = Array.from(document.querySelectorAll('#e-0 .card:not(.defense-mode), #e-2 .card:not(.defense-mode)')).filter(c => c.dataset.isDead !== "true");
@@ -1121,6 +1176,17 @@ window.startPvPGame = function() {
         } else { const bossCard = document.getElementById('enemy-boss-card'); const anyMinion = document.querySelector('#enemy-ui .card'); targetCard = bossCard ? bossCard : anyMinion; targetRect = targetCard ? targetCard.getBoundingClientRect() : document.getElementById('enemy-ui').getBoundingClientRect(); }
 
         const rA = el.getBoundingClientRect(); let isCrit = Math.random() > 0.8; let finalAtk = isCrit ? atk * 2 : atk;
+        
+        // --- BROADCAST ANIMASI LASER KE MUSUH ---
+        if(window.isPvPMode) {
+            window.pvpChannel.send({
+                type: 'broadcast',
+                event: 'pvp_attack',
+                payload: { attackerUid: uid, targetUid: targetCard ? targetCard.dataset.uid : null }
+            });
+        }
+        // ----------------------------------------
+
         window.playLaserSound();
 
         window.drawEnergyProjectile(rA, targetRect, isCrit ? "#fff" : "#e0ffff", isCrit ? "#ffff00" : "#00f2ff", () => {
@@ -1142,16 +1208,32 @@ window.startPvPGame = function() {
                     if (window.enemyHP <= 0) window.checkWinCondition(); 
                 } else {
                     let recoil = targetAtk - finalAtk; window.enemyHP = Math.max(0, window.enemyHP - recoil); window.spawnPopUp(recoil, true, false); 
-                    if (aiPassive.includes("[VANGUARD]") && attackerEl.dataset.vanguard !== "used") { attackerEl.dataset.vanguard = "used"; window.logAction(`Enemy's ${attackerName} survived recoil using [VANGUARD]!`, "enemy"); window.spawnPopUp("VANGUARD", true, false);
-                    } else { window.logAction(`Enemy's ${attackerName} was destroyed by your ${targetCard.dataset.cardName}!`, "player"); window.destroyCard(attackerEl, false); }
+                    if (attackerPassive.includes("[VANGUARD]") && el.dataset.vanguard !== "used") { el.dataset.vanguard = "used"; window.logAction(`Your ${cardName} survived recoil using [VANGUARD]!`, "player"); window.spawnPopUp("VANGUARD", false, false);
+                    } else { window.logAction(`Your ${cardName} was destroyed by enemy's ${targetCard.dataset.cardName}!`, "enemy"); window.destroyCard(el, true); }
                     if(window.enemyHP <= 0) window.checkWinCondition();
                 }
             } else {
                 window.enemyHP = Math.max(0, window.enemyHP - Math.floor(finalAtk)); window.updateUI(); window.spawnPopUp(Math.floor(finalAtk), true, isCrit);
-                document.getElementById('enemy-ui').classList.add('shake'); window.logAction(`${cardName} attacked Guardian for ${Math.floor(finalAtk)} damage!${isCrit?" (CRIT!)":""}`, "player");
+                document.getElementById('enemy-ui').classList.add('shake'); window.logAction(`${cardName} attacked Opponent for ${Math.floor(finalAtk)} damage!${isCrit?" (CRIT!)":""}`, "player");
                 if (window.enemyHP <= 0) window.checkWinCondition(); 
             }
-            setTimeout(() => { document.getElementById('player-ui').classList.remove('shake'); if(targetCard) targetCard.classList.remove('shake'); if (window.playerHP <= 0 || window.enemyHP <= 0) { return; } else { setTimeout(() => performEnemyAttack(attackerIndex + 1), 600); } }, 400);
+            
+            // --- BROADCAST UPDATE HP & KARTU MATI KE MUSUH ---
+            if(window.isPvPMode) {
+                let deadUIDs = Array.from(document.querySelectorAll('.card[data-is-dead="true"]')).map(c => c.dataset.uid);
+                window.pvpChannel.send({
+                    type: 'broadcast',
+                    event: 'sync_board',
+                    payload: {
+                        newPlayerHP: window.enemyHP, // HP Musuh di layarmu = HP Pemain di layar dia
+                        newEnemyHP: window.playerHP,
+                        deadUIDs: deadUIDs
+                    }
+                });
+            }
+            // ------------------------------------------------
+
+            setTimeout(() => { document.getElementById('player-ui').classList.remove('shake'); if(targetCard) targetCard.classList.remove('shake'); }, 400);
         });
     };
 
