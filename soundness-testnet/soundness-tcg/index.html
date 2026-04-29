@@ -259,7 +259,7 @@
 
 <div id="start-screen">
     <h1 class="start-title">SOUNDNESS TCG</h1>
-    <p class="start-subtitle">Welcome, <span id="display-username" style="color:var(--aqua)">Diver</span></p>
+    <p class="start-subtitle">Welcome, <span id="display-username" style="color:var(--aqua)">Auditor</span></p>
     <div class="menu-btn-group">
         <button id="btn-campaign-mode" class="btn-play-game">CAMPAIGN MODE</button>
         <button id="btn-pvp-mode" class="btn-play-game" style="background:#ff00ff; color:#fff; border: 1px solid #ff00ff;">PVP MODE</button>
@@ -375,7 +375,7 @@
                     <div id="deck-info" class="ui-slot-container" style="color:var(--aqua);">DECK <b id="deck-count" class="ui-count">0</b></div>
                     <div style="flex-grow:1; display:flex; flex-direction:column; align-items:center; margin: 0 15px;">
                         <div class="hp-bar-bg"><div id="player-bar" class="hp-bar-fill"></div></div>
-                        <div style="font-size:12px;margin-top:5px;color:var(--aqua);font-weight:bold;text-transform:uppercase;">DIVER LP: <span id="player-hp-text">8000</span></div>
+                        <div style="font-size:12px;margin-top:5px;color:var(--aqua);font-weight:bold;text-transform:uppercase;">SYSTEM INTEGRITY: <span id="player-hp-text">8000</span></div>
                     </div>
                     <div id="player-gy" class="ui-slot-container" style="border-color:#777;color:#aaa;" title="Player Graveyard">GY <b id="p-gy-count" class="ui-count">0</b></div>
                 </div>
@@ -477,7 +477,7 @@ try {
         } catch(e) {}
     };
 
-    window.TIER_BOSSES = ["ROOKIE GUARDIAN", "BRONZE KNIGHT", "SILVER LEVIATHAN", "GOLDEN DRAGON", "PLATINUM KRAKEN", "DIAMOND SOVEREIGN", "MASTER ABYSSAL GOD"];
+    window.TIER_BOSSES = ["BASIC BRUTE-FORCE", "HASH COLLISION", "CLASSICAL THREAT", "QUANTUM ANNEALER", "GROVER'S AGENT", "SHOR'S PRIME VECTOR", "MASTER QUANTUM ANOMALY"];
     window.TIER_NAMES = ["ROOKIE", "BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND", "MASTER"];
     window.TIER_COLORS = ["#888", "#cd7f32", "#c0c0c0", "#ffd700", "#e5e4e2", "#b9f2ff", "#ff00ff"];
     window.TIER_LP = [4000, 6000, 8000, 12000, 20000, 30000, 40000];
@@ -492,7 +492,9 @@ try {
         let rarity = "Common"; if (id % 12 === 0) rarity = "Legendary"; else if (id % 6 === 0) rarity = "Epic"; else if (id % 3 === 0) rarity = "Rare";
         let baseAtk = type === "Monster" ? 1000 + (i * 100) : 0; let baseDef = type === "Monster" ? Math.floor(baseAtk / 2) : 0;
         let desc = ""; let effectVal = 0;
-        if (type === "Monster") { desc = `Abyssal Protocol #${id}.`; } else if (type === "Spell") { effectVal = 500 + (i % 6) * 200; desc = `[INSTANT]. Gain +${effectVal} ATK bonus!`; } else if (type === "Trap") { effectVal = (i % 4 === 0) ? 0 : 800 + (i % 5) * 200; desc = effectVal === 0 ? "[REACTIVE TRIGGER]. Block." : `[REACTIVE TRIGGER]. Block & +${effectVal} LP.`; }
+       if (type === "Monster") { desc = `[NODE]. Encrypted Data Layer #${id}.`; } 
+        else if (type === "Spell") { effectVal = 500 + (i % 6) * 200; desc = `[INSTANT]. Inject +${effectVal} Processing Power!`; } 
+        else if (type === "Trap") { effectVal = (i % 4 === 0) ? 0 : 800 + (i % 5) * 200; desc = effectVal === 0 ? "[FIREWALL]. Block connection." : `[FIREWALL]. Block & restore +${effectVal} System LP.`; }
         window.GENERATED_CARDS.push({ id: id, type: type, rarity: rarity, name: `${type} Unit #${id}`, atk: baseAtk, def: baseDef, img: `images/${(i % 8) + 1}.png`, desc: desc, effectVal: effectVal });
     }
     window.DATABASE_CARDS = window.MANUAL_CARDS.concat(window.GENERATED_CARDS);
@@ -569,7 +571,7 @@ try {
                 data = newProfile; 
             }
 
-            window.currentUser = data.username || "DIVER"; 
+            window.currentUser = data.username || "AUDITOR"; 
             let parsedRank = data.rank; if (typeof parsedRank === 'string') { try { parsedRank = JSON.parse(parsedRank); } catch(e){ parsedRank = null; } } window.rankData = (parsedRank && typeof parsedRank === 'object') ? parsedRank : { points: 0, tierIdx: 0, streak: 0 };
             let parsedInv = data.inventory; if (typeof parsedInv === 'string') { try { parsedInv = JSON.parse(parsedInv); } catch(e){ parsedInv = []; } } if (!Array.isArray(parsedInv)) parsedInv = [];
             let tempInv = []; parsedInv.forEach(ic => { if(ic && ic.id) { let match = window.DATABASE_CARDS.find(db => db.id === ic.id); if(match) tempInv.push(match); } });
@@ -1190,8 +1192,8 @@ window.startPvPGame = function() {
     };
 
     window.checkWinCondition = function() {
-        if (window.enemyHP <= 0) { document.querySelectorAll('#enemy-ui .card').forEach(e => e.classList.add('shatter')); window.logAction("Enemy Forces Defeated!!", "system"); window.processRankResult(true); 
-        } else if (window.playerHP <= 0) { window.logAction("Diver Defeated...", "enemy"); window.processRankResult(false); window.saveUserData(); }
+        if (window.enemyHP <= 0) { document.querySelectorAll('#enemy-ui .card').forEach(e => e.classList.add('shatter')); window.logAction("Threat Neutralized! System Secured.", "system"); window.processRankResult(true); 
+        } else if (window.playerHP <= 0) { window.logAction("System Compromised. Auditor Defeated...", "enemy"); window.processRankResult(false); window.saveUserData(); }
     };
 
     window.attack = function(atk, el, uid, cardName) {
