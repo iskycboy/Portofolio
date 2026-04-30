@@ -530,6 +530,7 @@
     </div>
 </div>
 
+
 <div id="lore-modal">
     <div id="lore-modal-content">
         <div id="lore-img"></div><h2 id="lore-title"></h2><p id="lore-type"></p><p id="lore-desc"></p>
@@ -1267,17 +1268,37 @@ window.startPvPGame = function() {
         window.processRankResult(isWin);
     };
 
-    window.surrenderGame = function() {
-        if(confirm("Are you sure you want to surrender?")) {
-            if(window.isPvPMode) {
-                window.pvpChannel.send({ type: 'broadcast', event: 'surrender', payload: {} });
-                window.processRankResult(false);
-            } else {
-                window.logAction("Diver surrendered...", "enemy");
-                window.processRankResult(false); 
-            }
+   window.surrenderGame = function() {
+    // 1. Validasi Pengguna
+    if (confirm("Are you sure you want to surrender?")) {
+        
+        // 2. TEARDOWN PHASE: Bersihkan visual segera
+        if (typeof window.clearCardSelections === 'function') {
+            window.clearCardSelections();
         }
-    };
+
+        // 3. LOGIC PHASE: Jalankan protokol berdasarkan mode permainan
+        if (window.isPvPMode) {
+            // Protokol Sinkronisasi Multiplayer
+            if (window.pvpChannel) {
+                window.pvpChannel.send({ type: 'broadcast', event: 'surrender', payload: {} });
+            }
+            window.processRankResult(false);
+        } else {
+            // Protokol Single Player
+            window.logAction("CONNECTION TERMINATED: Diver surrendered...", "enemy");
+            
+            // PQ-STACK RESET: Kembalikan indikator ke mode IDLE
+            const pqText = document.getElementById('pq-status-text');
+            if (pqText) {
+                pqText.textContent = "IDLE_NODE";
+                pqText.style.color = "var(--aqua)";
+            }
+            
+            window.processRankResult(false); 
+        }
+    }
+};
 
     window.getEnemyCardByTier = function() {
         let pool = window.DATABASE_CARDS.filter(c => (c.type || "Monster") === "Monster"); let tier = window.rankData.tierIdx || 0; let filteredPool = [];
@@ -1768,6 +1789,8 @@ if (Math.random() > 0.95) { window.logAction(`[ROOKIE AI] ${attackerName} is con
 
     window.processRankResult = function(isWin) {
 
+        window.clearCardSelections(); 
+
         window.isInBattle = false;
         document.getElementById('main-game').style.display = 'none'; 
         document.getElementById('battle-log').style.display = 'none'; 
@@ -1852,6 +1875,41 @@ window.addEventListener('beforeunload', function (e) {
         e.returnValue = ''; 
     }
 });
+
+
+// --- STATE TEARDOWN (Pembersih Memori & Visual) ---
+
+// --- STATE TEARDOWN: Pembersih Menyeluruh (Arena & Library) ---
+window.clearCardSelections = function() {
+    // 1. Targetkan semua elemen yang mungkin punya efek "nyala" atau "pilih"
+    // Kita cari .card (Arena) dan .card-item (Deck Builder)
+    const allVisualCards = document.querySelectorAll('.card, .card-item');
+
+    allVisualCards.forEach(card => {
+        // Hapus semua class visual yang bikin kartu menyala/terpilih
+        card.classList.remove('selected', 'active', 'highlight', 'active-glow', 'targeting');
+        
+        // Reset style manual (jika ada yang dimodifikasi lewat .style)
+        card.style.border = "";
+        card.style.boxShadow = "";
+        card.style.filter = "";
+        card.style.transform = ""; // Reset zoom atau rotasi sisa battle
+    });
+
+    // 2. Kosongkan memori variabel seleksi
+    window.selectedCard = null;
+    window.selectedHandCard = null;
+    window.selectedLibrary = []; // <--- Opsional: Reset juga pilihan di Deck Builder jika perlu
+    
+    // 3. Reset UI Counter di Deck Builder
+    const counterEl = document.getElementById('counter');
+    if (counterEl) counterEl.textContent = "0 / 8 Selected";
+    
+    const startBtn = document.getElementById('start-btn');
+    if (startBtn) startBtn.disabled = true;
+
+    console.log("System Cleanup: Visual & Memory States Purged.");
+};
 </script>
 </body>
 </html>
