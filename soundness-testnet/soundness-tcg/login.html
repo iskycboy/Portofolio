@@ -12,167 +12,62 @@
         --glow: 0 0 20px rgba(0,242,255,0.6); 
         --damage: #ff3e3e; 
         --gold: #ffd700; 
+        --discord: #5865F2; /* Discord Blurple */
         --grid-line: rgba(0, 242, 255, 0.05);
     }
     
     body { 
-        /* Efek Cyber Grid Background */
         background-color: var(--deep-blue);
         background-image: 
             linear-gradient(var(--grid-line) 1px, transparent 1px),
             linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
         background-size: 40px 40px;
-        background-position: center center;
-        
         color: #fff; 
-        font-family: 'Courier New', Courier, monospace; /* Font Hacker/Terminal */
-        margin: 0; 
-        display: flex; 
-        justify-content: center; 
-        align-items: center; 
-        height: 100vh; 
-        overflow: hidden; 
-        position: relative;
+        font-family: 'Courier New', Courier, monospace;
+        margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; position: relative;
     }
 
-    /* Vignette effect (gelap di pinggir layar) */
     body::before {
-        content: "";
-        position: absolute;
-        inset: 0;
+        content: ""; position: absolute; inset: 0;
         background: radial-gradient(circle at center, transparent 20%, #020611 100%);
-        pointer-events: none;
-        z-index: 1;
+        pointer-events: none; z-index: 1;
     }
 
-    /* Glassmorphism Container */
     .auth-container { 
         background: rgba(5, 11, 26, 0.6); 
-        backdrop-filter: blur(12px); /* Efek kaca buram */
+        backdrop-filter: blur(12px); 
         border: 1px solid rgba(0,242,255,0.2); 
         border-top: 3px solid var(--aqua);
         border-bottom: 3px solid var(--aqua);
-        padding: 40px 30px; 
-        border-radius: 8px; 
+        padding: 40px 30px; border-radius: 8px; 
         box-shadow: 0 15px 35px rgba(0,0,0,0.5), var(--glow); 
-        text-align: center; 
-        width: 320px; 
-        position: relative; 
-        z-index: 10; 
+        text-align: center; width: 320px; z-index: 10; 
         animation: bootUp 0.8s ease-out;
     }
 
     @keyframes bootUp {
-        0% { opacity: 0; transform: scale(0.9) translateY(20px); filter: brightness(2); }
-        100% { opacity: 1; transform: scale(1) translateY(0); filter: brightness(1); }
+        0% { opacity: 0; transform: scale(0.9) translateY(20px); }
+        100% { opacity: 1; transform: scale(1) translateY(0); }
     }
 
-    .title { 
-        font-family: 'Segoe UI', sans-serif;
-        font-size: 34px; 
-        color: var(--aqua); 
-        letter-spacing: 8px; 
-        text-shadow: var(--glow); 
-        margin-top: 0; 
-        margin-bottom: 0px; 
-        text-transform: uppercase;
-    }
+    .title { font-size: 34px; color: var(--aqua); letter-spacing: 8px; text-shadow: var(--glow); margin: 0; text-transform: uppercase; }
+    .subtitle { color: #777; font-size: 12px; letter-spacing: 2px; margin-bottom: 30px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1); }
 
-    .subtitle { 
-        color: #777; 
-        font-size: 12px; 
-        letter-spacing: 2px;
-        margin-bottom: 30px; 
-        text-transform: uppercase;
-        border-bottom: 1px dashed rgba(255,255,255,0.1);
-        padding-bottom: 10px;
-    }
-
-    /* Input bergaya Terminal */
-    input { 
-        width: 100%; 
-        padding: 15px; 
-        margin: 10px 0; 
-        background: rgba(0, 0, 0, 0.5); 
-        color: var(--aqua); 
-        border: 1px solid rgba(0, 242, 255, 0.3); 
-        border-radius: 4px; 
-        box-sizing: border-box; 
-        text-align: center; 
-        font-weight: bold; 
-        font-size: 16px;
-        letter-spacing: 2px; 
-        outline: none; 
-        transition: 0.3s;
-        font-family: 'Courier New', Courier, monospace;
+    .btn-discord { 
+        width: 100%; padding: 15px; margin-top: 20px; font-size: 14px; 
+        background: var(--discord); color: #fff; font-weight: bold; 
+        border: none; border-radius: 4px; cursor: pointer; 
+        text-transform: uppercase; letter-spacing: 2px;
+        transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px;
     }
     
-    input:focus { 
-        background: rgba(0, 20, 40, 0.8);
-        border-color: var(--aqua);
-        box-shadow: 0 0 15px rgba(0,242,255,0.5); 
-    }
-    
-    input::placeholder { color: rgba(0, 242, 255, 0.3); }
+    .btn-discord:hover { filter: brightness(1.2); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(88, 101, 242, 0.4); }
 
-    /* Tombol Interaktif */
-    .btn { 
-        width: 100%; 
-        padding: 15px; 
-        margin-top: 20px; 
-        font-size: 16px; 
-        background: transparent; 
-        color: var(--aqua); 
-        font-weight: bold; 
-        border: 2px solid var(--aqua); 
-        border-radius: 4px; 
-        cursor: pointer; 
-        text-transform: uppercase; 
-        letter-spacing: 3px;
-        transition: all 0.3s ease; 
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .btn:hover:not(:disabled) { 
-        background: var(--aqua); 
-        color: #000; 
-        box-shadow: var(--glow); 
-        transform: translateY(-2px);
-    }
-    
-    .btn:disabled { 
-        border-color: #444; 
-        color: #666; 
-        background: transparent;
-        cursor: not-allowed; 
-        box-shadow: none;
-    }
+    #msg { font-size: 11px; margin-top: 20px; font-weight: bold; height: 15px; color: var(--gold); }
 
-    #msg { 
-        font-size: 12px; 
-        margin-top: 15px; 
-        font-weight: bold; 
-        height: 15px; 
-        letter-spacing: 1px;
-    }
-
-    /* Elemen PQ Stack */
-    .pq-stack-status {
-        position: absolute;
-        bottom: 10px;
-        right: 15px;
-        font-size: 9px;
-        color: rgba(255, 255, 255, 0.4);
-        text-align: right;
-    }
-    .pq-label { color: var(--aqua); opacity: 0.8; }
+    .pq-stack-status { position: absolute; bottom: 10px; right: 15px; font-size: 9px; color: rgba(255, 255, 255, 0.4); }
     .pq-value { color: var(--gold); animation: pulseStatus 1.5s infinite; }
-    
-    @keyframes pulseStatus {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.4; }
-    }
+    @keyframes pulseStatus { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 </style>
 </head>
 <body>
@@ -181,14 +76,14 @@
     <h1 class="title">SOUNDNESS</h1>
     <p class="subtitle">Secure Network Gateway</p>
     
-    <input type="text" id="username" placeholder="DISCORD USERNAME" autocomplete="off" spellcheck="false">
+    <button id="discord-btn" class="btn-discord" onclick="handleDiscordLogin()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037 19.736 19.736 0 0 0-4.885 1.515.069.069 0 0 0-.032.027C.533 9.048-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.419-2.157 2.419z"/></svg>
+        AUTHORIZE DISCORD
+    </button>
+    <div id="msg">READY_FOR_HANDSHAKE</div>
     
-    <button id="action-btn" class="btn" onclick="handleDiscordAuth()">INITIALIZE</button>
-    <div id="msg"></div>
-    
-    <!-- Indikator PQ Stack -->
     <div class="pq-stack-status">
-        <span class="pq-label">PQ-STACK:</span>
+        <span style="color:var(--aqua)">PQ-STACK:</span>
         <span id="pq-status-text" class="pq-value">IDLE_NODE</span>
     </div>
 </div>
@@ -198,108 +93,30 @@
     const SUPABASE_KEY = 'sb_publishable_rS96SvJYsuPikvJ8UFblEA_Gzc9gTys';
     const supaClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Cek apakah user sudah login sebelumnya
     window.onload = async function() {
         const { data: { session } } = await supaClient.auth.getSession();
         if (session) window.location.href = 'index.html'; 
     };
 
-    async function handleDiscordAuth() {
-        const rawUsername = document.getElementById('username').value.trim();
+    async function handleDiscordLogin() {
         const msg = document.getElementById('msg');
-        const btn = document.getElementById('action-btn');
-
-        if (!rawUsername) { 
-            msg.style.color = 'var(--damage)'; 
-            msg.textContent = 'Discord Username is required!'; 
-            return; 
-        }
-
-        // Validasi Karakter
-        const isValidFormat = /^[a-zA-Z0-9_.]+$/.test(rawUsername);
-
-        if (!isValidFormat) {
-            msg.style.color = 'var(--damage)'; 
-            msg.textContent = 'Format Denied! [a-z, 0-9, ., _] only.'; 
-            return; 
-        }
-
-        // Cek panjang minimal karakter
-        if (rawUsername.length < 3) {
-            msg.style.color = 'var(--damage)'; 
-            msg.textContent = 'ID must be 3+ characters.'; 
-            return; 
-        }
-
-        const username = rawUsername.toLowerCase();
-        const dummyEmail = `${username}@soundness.tcg`;
-        const dummyPassword = `SND_beta_password_2026!`;
-
-        msg.style.color = 'var(--gold)'; 
-        msg.textContent = 'Authenticating Connection...'; 
-        btn.disabled = true;
-
-        // --- EFEK PQ STACK HANDSHAKE ---
         const pqText = document.getElementById('pq-status-text');
+
+        msg.textContent = 'REDIRECTING_TO_DISCORD...';
         pqText.textContent = "VERIFYING_ZKP...";
-        pqText.style.color = "#ff00ff"; // Warna ungu saat proses
-        
-        setTimeout(() => {
-            if(btn.disabled) {
-                pqText.textContent = "SYNCING_NODE...";
-                pqText.style.color = "var(--aqua)";
+        pqText.style.color = "#ff00ff";
+
+        const { data, error } = await supaClient.auth.signInWithOAuth({
+            provider: 'discord',
+            options: {
+                // Pastikan URL ini sudah kamu daftarkan di Discord Developer Portal & Supabase
+                redirectTo: 'https://soundness-tcg.vercel.app/login' 
             }
-        }, 800);
-        // -------------------------------
+        });
 
-        try {
-            // SKENARIO A: Coba Login
-            let { data, error } = await supaClient.auth.signInWithPassword({ 
-                email: dummyEmail, 
-                password: dummyPassword 
-            });
-
-            // SKENARIO B: Register
-            if (error && (error.message.includes('Invalid login credentials') || error.message.includes('Invalid credentials'))) {
-                msg.textContent = 'Unregistered Node! Creating profile...';
-                
-                const { data: signUpData, error: signUpError } = await supaClient.auth.signUp({ 
-                    email: dummyEmail, 
-                    password: dummyPassword 
-                });
-
-                if (signUpError) throw signUpError;
-                data = signUpData;
-
-                if (data.user) {
-                    const { error: dbError } = await supaClient.from('users').insert([{ 
-                        id: data.user.id, 
-                        username: username, 
-                        rank: { points: 0, tierIdx: 0, streak: 0 }, 
-                        inventory: [] 
-                    }]);
-                    
-                    if (dbError) console.error("Database Insert Error:", dbError.message);
-                }
-            } else if (error) {
-                throw error; 
-            }
-
-            // BERHASIL!
-            pqText.textContent = "PQ_SECURED";
-            pqText.style.color = "#00ff88"; // Hijau aman
-            
-            msg.style.color = 'var(--aqua)'; 
-            msg.textContent = `Access Granted, ${username.toUpperCase()}!`;
-            
-            setTimeout(() => window.location.href = 'index.html', 1000);
-
-        } catch (err) {
-            msg.style.color = 'var(--damage)'; 
-            msg.textContent = "ERR: " + err.message; 
-            btn.disabled = false;
-            
-            // Kembalikan status PQ jika error
+        if (error) {
+            msg.style.color = 'var(--damage)';
+            msg.textContent = 'AUTH_ERROR: ' + error.message;
             pqText.textContent = "CONN_FAILED";
             pqText.style.color = "var(--damage)";
         }
