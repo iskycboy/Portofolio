@@ -3,122 +3,306 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SOUNDNESS TCG - Authentication</title>
+<title>SOUNDNESS TCG - Security Terminal</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-    :root { --aqua: #00f2ff; --deep-blue: #050b1a; --glow: 0 0 25px rgba(0,242,255,0.8); --damage: #ff3e3e; --gold: #ffd700; }
-    body { background: radial-gradient(circle at top, #1a3a5a 0%, var(--deep-blue) 100%); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-    .auth-container { background: rgba(0,10,25,0.9); border: 2px solid var(--aqua); padding: 40px; border-radius: 15px; box-shadow: var(--glow); text-align: center; width: 320px; position: relative; z-index: 10; }
-    .title { font-size: 32px; color: var(--aqua); letter-spacing: 5px; text-shadow: var(--glow); margin-top: 0; margin-bottom: 5px; }
-    .subtitle { color: #aaa; font-style: italic; font-size: 14px; margin-bottom: 25px; }
-    input { width: 100%; padding: 12px; margin: 10px 0; background: #111; color: var(--aqua); border: 1px solid var(--aqua); border-radius: 5px; box-sizing: border-box; text-align: center; font-weight: bold; letter-spacing: 1px; outline: none; }
-    input:focus { box-shadow: 0 0 10px var(--aqua); }
-    .btn { width: 100%; padding: 12px; margin-top: 15px; font-size: 16px; background: var(--aqua); color: #000; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; box-shadow: var(--glow); text-transform: uppercase; transition: 0.3s; }
-    .btn:hover:not(:disabled) { transform: scale(1.05); }
-    .btn:disabled { background: #444; color: #888; box-shadow: none; cursor: not-allowed; }
-    .toggle-text { margin-top: 20px; font-size: 12px; color: #aaa; cursor: pointer; text-decoration: underline; transition: 0.2s; }
-    .toggle-text:hover { color: var(--aqua); }
-    #msg { font-size: 12px; margin-top: 15px; font-weight: bold; height: 15px; }
-    #verify-popup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); }
-    .popup-box { background: var(--deep-blue); border: 2px solid var(--aqua); padding: 30px; border-radius: 10px; text-align: center; box-shadow: var(--glow); max-width: 80%; width: 350px; }
+    :root { 
+        --aqua: #00f2ff; 
+        --deep-blue: #050b1a; 
+        --glow: 0 0 20px rgba(0,242,255,0.6); 
+        --damage: #ff3e3e; 
+        --gold: #ffd700; 
+        --grid-line: rgba(0, 242, 255, 0.05);
+    }
+    
+    body { 
+        /* Efek Cyber Grid Background */
+        background-color: var(--deep-blue);
+        background-image: 
+            linear-gradient(var(--grid-line) 1px, transparent 1px),
+            linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+        background-size: 40px 40px;
+        background-position: center center;
+        
+        color: #fff; 
+        font-family: 'Courier New', Courier, monospace; /* Font Hacker/Terminal */
+        margin: 0; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        height: 100vh; 
+        overflow: hidden; 
+        position: relative;
+    }
+
+    /* Vignette effect (gelap di pinggir layar) */
+    body::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, transparent 20%, #020611 100%);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    /* Glassmorphism Container */
+    .auth-container { 
+        background: rgba(5, 11, 26, 0.6); 
+        backdrop-filter: blur(12px); /* Efek kaca buram */
+        border: 1px solid rgba(0,242,255,0.2); 
+        border-top: 3px solid var(--aqua);
+        border-bottom: 3px solid var(--aqua);
+        padding: 40px 30px; 
+        border-radius: 8px; 
+        box-shadow: 0 15px 35px rgba(0,0,0,0.5), var(--glow); 
+        text-align: center; 
+        width: 320px; 
+        position: relative; 
+        z-index: 10; 
+        animation: bootUp 0.8s ease-out;
+    }
+
+    @keyframes bootUp {
+        0% { opacity: 0; transform: scale(0.9) translateY(20px); filter: brightness(2); }
+        100% { opacity: 1; transform: scale(1) translateY(0); filter: brightness(1); }
+    }
+
+    .title { 
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 34px; 
+        color: var(--aqua); 
+        letter-spacing: 8px; 
+        text-shadow: var(--glow); 
+        margin-top: 0; 
+        margin-bottom: 0px; 
+        text-transform: uppercase;
+    }
+
+    .subtitle { 
+        color: #777; 
+        font-size: 12px; 
+        letter-spacing: 2px;
+        margin-bottom: 30px; 
+        text-transform: uppercase;
+        border-bottom: 1px dashed rgba(255,255,255,0.1);
+        padding-bottom: 10px;
+    }
+
+    /* Input bergaya Terminal */
+    input { 
+        width: 100%; 
+        padding: 15px; 
+        margin: 10px 0; 
+        background: rgba(0, 0, 0, 0.5); 
+        color: var(--aqua); 
+        border: 1px solid rgba(0, 242, 255, 0.3); 
+        border-radius: 4px; 
+        box-sizing: border-box; 
+        text-align: center; 
+        font-weight: bold; 
+        font-size: 16px;
+        letter-spacing: 2px; 
+        outline: none; 
+        transition: 0.3s;
+        font-family: 'Courier New', Courier, monospace;
+    }
+    
+    input:focus { 
+        background: rgba(0, 20, 40, 0.8);
+        border-color: var(--aqua);
+        box-shadow: 0 0 15px rgba(0,242,255,0.5); 
+    }
+    
+    input::placeholder { color: rgba(0, 242, 255, 0.3); }
+
+    /* Tombol Interaktif */
+    .btn { 
+        width: 100%; 
+        padding: 15px; 
+        margin-top: 20px; 
+        font-size: 16px; 
+        background: transparent; 
+        color: var(--aqua); 
+        font-weight: bold; 
+        border: 2px solid var(--aqua); 
+        border-radius: 4px; 
+        cursor: pointer; 
+        text-transform: uppercase; 
+        letter-spacing: 3px;
+        transition: all 0.3s ease; 
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .btn:hover:not(:disabled) { 
+        background: var(--aqua); 
+        color: #000; 
+        box-shadow: var(--glow); 
+        transform: translateY(-2px);
+    }
+    
+    .btn:disabled { 
+        border-color: #444; 
+        color: #666; 
+        background: transparent;
+        cursor: not-allowed; 
+        box-shadow: none;
+    }
+
+    #msg { 
+        font-size: 12px; 
+        margin-top: 15px; 
+        font-weight: bold; 
+        height: 15px; 
+        letter-spacing: 1px;
+    }
+
+    /* Elemen PQ Stack */
+    .pq-stack-status {
+        position: absolute;
+        bottom: 10px;
+        right: 15px;
+        font-size: 9px;
+        color: rgba(255, 255, 255, 0.4);
+        text-align: right;
+    }
+    .pq-label { color: var(--aqua); opacity: 0.8; }
+    .pq-value { color: var(--gold); animation: pulseStatus 1.5s infinite; }
+    
+    @keyframes pulseStatus {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+    }
 </style>
 </head>
 <body>
 
 <div class="auth-container">
     <h1 class="title">SOUNDNESS</h1>
-    <p class="subtitle" id="mode-subtitle">Enter your credentials to dive.</p>
+    <p class="subtitle">Secure Network Gateway</p>
     
-    <input type="text" id="username" placeholder="USERNAME (In-Game)" style="display:none;">
-    <input type="email" id="email" placeholder="EMAIL ADDRESS">
-    <input type="password" id="password" placeholder="PASSWORD">
+    <input type="text" id="username" placeholder="DISCORD USERNAME" autocomplete="off" spellcheck="false">
     
-    <button id="action-btn" class="btn" onclick="handleAuth()">LOGIN</button>
+    <button id="action-btn" class="btn" onclick="handleDiscordAuth()">INITIALIZE</button>
     <div id="msg"></div>
     
-    <div class="toggle-text" onclick="toggleMode()" id="toggle-btn">New Diver? Create an Account</div>
-</div>
-
-<div id="verify-popup">
-    <div class="popup-box">
-        <h2 style="color: var(--aqua); letter-spacing: 2px; margin-top: 0;">REGISTRATION SUCCESS</h2>
-        <p style="color: #fff; font-size: 14px; line-height: 1.5; margin-bottom: 25px;">
-            Your Diver Profile has been created!<br><br>
-            You can login directly.
-        </p>
-        <button class="btn" onclick="closePopup()">PROCEED TO LOGIN</button>
+    <!-- Indikator PQ Stack -->
+    <div class="pq-stack-status">
+        <span class="pq-label">PQ-STACK:</span>
+        <span id="pq-status-text" class="pq-value">IDLE_NODE</span>
     </div>
 </div>
 
 <script>
-    const supaClient = window.supabase.createClient('https://nhhqapnuhhvweooeeseh.supabase.co', 'sb_publishable_rS96SvJYsuPikvJ8UFblEA_Gzc9gTys');
-    let isLoginMode = true;
+    const SUPABASE_URL = 'https://nhhqapnuhhvweooeeseh.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_rS96SvJYsuPikvJ8UFblEA_Gzc9gTys';
+    const supaClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // Cek apakah user sudah login sebelumnya
     window.onload = async function() {
         const { data: { session } } = await supaClient.auth.getSession();
-        if (session) window.location.href = 'index.html';
+        if (session) window.location.href = 'index.html'; 
     };
 
-    function toggleMode() {
-        isLoginMode = !isLoginMode;
-        document.getElementById('msg').textContent = '';
-        if (isLoginMode) {
-            document.getElementById('username').style.display = 'none';
-            document.getElementById('action-btn').textContent = 'LOGIN';
-            document.getElementById('toggle-btn').textContent = 'New Diver? Create an Account';
-            document.getElementById('mode-subtitle').textContent = 'Enter your credentials to dive.';
-        } else {
-            document.getElementById('username').style.display = 'block';
-            document.getElementById('action-btn').textContent = 'REGISTER';
-            document.getElementById('toggle-btn').textContent = 'Already have an account? Login here';
-            document.getElementById('mode-subtitle').textContent = 'Register to join the depths.';
-        }
-    }
-
-    async function handleAuth() {
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value.trim();
-        const username = document.getElementById('username').value.trim();
+    async function handleDiscordAuth() {
+        const rawUsername = document.getElementById('username').value.trim();
         const msg = document.getElementById('msg');
         const btn = document.getElementById('action-btn');
 
-        if (!email || !password) { msg.style.color = 'var(--damage)'; msg.textContent = 'Please fill all required fields!'; return; }
-        if (!isLoginMode && !username) { msg.style.color = 'var(--damage)'; msg.textContent = 'Username is required!'; return; }
+        if (!rawUsername) { 
+            msg.style.color = 'var(--damage)'; 
+            msg.textContent = 'Discord Username is required!'; 
+            return; 
+        }
 
-        msg.style.color = 'var(--gold)'; msg.textContent = 'Processing...'; btn.disabled = true;
+        // Validasi Karakter
+        const isValidFormat = /^[a-zA-Z0-9_.]+$/.test(rawUsername);
+
+        if (!isValidFormat) {
+            msg.style.color = 'var(--damage)'; 
+            msg.textContent = 'Format Denied! [a-z, 0-9, ., _] only.'; 
+            return; 
+        }
+
+        // Cek panjang minimal karakter
+        if (rawUsername.length < 3) {
+            msg.style.color = 'var(--damage)'; 
+            msg.textContent = 'ID must be 3+ characters.'; 
+            return; 
+        }
+
+        const username = rawUsername.toLowerCase();
+        const dummyEmail = `${username}@soundness.tcg`;
+        const dummyPassword = `SND_beta_password_2026!`;
+
+        msg.style.color = 'var(--gold)'; 
+        msg.textContent = 'Authenticating Connection...'; 
+        btn.disabled = true;
+
+        // --- EFEK PQ STACK HANDSHAKE ---
+        const pqText = document.getElementById('pq-status-text');
+        pqText.textContent = "VERIFYING_ZKP...";
+        pqText.style.color = "#ff00ff"; // Warna ungu saat proses
+        
+        setTimeout(() => {
+            if(btn.disabled) {
+                pqText.textContent = "SYNCING_NODE...";
+                pqText.style.color = "var(--aqua)";
+            }
+        }, 800);
+        // -------------------------------
 
         try {
-            if (isLoginMode) {
-                const { data, error } = await supaClient.auth.signInWithPassword({ email, password });
-                if (error) { throw error; }
-                msg.style.color = 'var(--aqua)'; msg.textContent = 'Login successful! Redirecting...';
-                setTimeout(() => window.location.href = 'index.html', 1000);
-            } else {
-                const { data, error } = await supaClient.auth.signUp({ email, password });
-                if (error) { throw error; }
+            // SKENARIO A: Coba Login
+            let { data, error } = await supaClient.auth.signInWithPassword({ 
+                email: dummyEmail, 
+                password: dummyPassword 
+            });
+
+            // SKENARIO B: Register
+            if (error && (error.message.includes('Invalid login credentials') || error.message.includes('Invalid credentials'))) {
+                msg.textContent = 'Unregistered Node! Creating profile...';
                 
+                const { data: signUpData, error: signUpError } = await supaClient.auth.signUp({ 
+                    email: dummyEmail, 
+                    password: dummyPassword 
+                });
+
+                if (signUpError) throw signUpError;
+                data = signUpData;
+
                 if (data.user) {
-                    // PERBAIKAN: Gunakan format destructuring standar Supabase v2 alih-alih .catch()
                     const { error: dbError } = await supaClient.from('users').insert([{ 
                         id: data.user.id, 
                         username: username, 
                         rank: { points: 0, tierIdx: 0, streak: 0 }, 
                         inventory: [] 
                     }]);
+                    
                     if (dbError) console.error("Database Insert Error:", dbError.message);
                 }
-                
-                msg.textContent = ''; btn.disabled = false;
-                document.getElementById('verify-popup').style.display = 'flex';
+            } else if (error) {
+                throw error; 
             }
-        } catch (err) {
-            msg.style.color = 'var(--damage)'; msg.textContent = err.message; btn.disabled = false;
-        }
-    }
 
-    function closePopup() {
-        document.getElementById('verify-popup').style.display = 'none';
-        toggleMode(); 
+            // BERHASIL!
+            pqText.textContent = "PQ_SECURED";
+            pqText.style.color = "#00ff88"; // Hijau aman
+            
+            msg.style.color = 'var(--aqua)'; 
+            msg.textContent = `Access Granted, ${username.toUpperCase()}!`;
+            
+            setTimeout(() => window.location.href = 'index.html', 1000);
+
+        } catch (err) {
+            msg.style.color = 'var(--damage)'; 
+            msg.textContent = "ERR: " + err.message; 
+            btn.disabled = false;
+            
+            // Kembalikan status PQ jika error
+            pqText.textContent = "CONN_FAILED";
+            pqText.style.color = "var(--damage)";
+        }
     }
 </script>
 </body>
