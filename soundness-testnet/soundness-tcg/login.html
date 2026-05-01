@@ -6,6 +6,7 @@
 <title>SOUNDNESS TCG - Security Terminal</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+<<<<<<< HEAD
 
     /* MANTRA PEMANGGIL FONT KHUSUS */
     @font-face {
@@ -13,6 +14,8 @@
         /* Pastikan nama file di bawah ini SAMA PERSIS dengan file yang kamu download */
         src: url('fonts/black_chancery.ttf') format('truetype'); 
     }
+=======
+>>>>>>> 08160c949fcf556be9e1af1e56689caf741aaa67
     :root { 
         --aqua: #00f2ff; 
         --deep-blue: #050b1a; 
@@ -25,6 +28,7 @@
     
     body { 
         background-color: var(--deep-blue);
+<<<<<<< HEAD
         background-image: url('images/bg-game.webp'); 
         background-size: cover;      
         background-position: center; 
@@ -42,12 +46,25 @@
         height: 100vh; 
         overflow: hidden; 
         position: relative;
+=======
+        background-image: 
+            linear-gradient(var(--grid-line) 1px, transparent 1px),
+            linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+        background-size: 40px 40px;
+        color: #fff; 
+        font-family: 'Courier New', Courier, monospace;
+        margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; position: relative;
+>>>>>>> 08160c949fcf556be9e1af1e56689caf741aaa67
     }
 
     body::before {
         content: ""; position: absolute; inset: 0;
+<<<<<<< HEAD
         /* Ubah warna hitam pekat menjadi hitam transparan (0.8) di pinggiran */
         background: radial-gradient(circle at center, rgba(0,0,0,0) 20%, rgba(2, 6, 17, 0.8) 100%);
+=======
+        background: radial-gradient(circle at center, transparent 20%, #020611 100%);
+>>>>>>> 08160c949fcf556be9e1af1e56689caf741aaa67
         pointer-events: none; z-index: 1;
     }
 
@@ -57,6 +74,7 @@
         border: 1px solid rgba(0,242,255,0.2); 
         border-top: 3px solid var(--aqua);
         border-bottom: 3px solid var(--aqua);
+<<<<<<< HEAD
         padding: 40px 30px; 
         border-radius: 8px; 
         box-shadow: 0 15px 35px rgba(0,0,0,0.5), var(--glow); 
@@ -68,6 +86,12 @@
         width: 90%; /* Ambil 90% lebar layar (menyisakan 5% ruang kosong di kiri-kanan) */
         max-width: 350px; /* JANGAN PERNAH lebih besar dari 350px meskipun layarnya raksasa */
         box-sizing: border-box; /* Paksa padding masuk ke DALAM ukuran lebar, bukan ke luar */
+=======
+        padding: 40px 30px; border-radius: 8px; 
+        box-shadow: 0 15px 35px rgba(0,0,0,0.5), var(--glow); 
+        text-align: center; width: 320px; z-index: 10; 
+        animation: bootUp 0.8s ease-out;
+>>>>>>> 08160c949fcf556be9e1af1e56689caf741aaa67
     }
 
     @keyframes bootUp {
@@ -93,6 +117,7 @@
     .pq-stack-status { position: absolute; bottom: 10px; right: 15px; font-size: 9px; color: rgba(255, 255, 255, 0.4); }
     .pq-value { color: var(--gold); animation: pulseStatus 1.5s infinite; }
     @keyframes pulseStatus { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+<<<<<<< HEAD
 
 .main-game-title {
         font-family: 'Black Chancery', serif; 
@@ -117,28 +142,39 @@
             
         animation: bootUp 1.2s ease-out; 
     }
+=======
+>>>>>>> 08160c949fcf556be9e1af1e56689caf741aaa67
 </style>
 
 
 </head>
 <body>
 
+<<<<<<< HEAD
 <!-- Teks ini sekarang akan terbang ke coretan kuningmu! -->
 <h1 class="main-game-title">SOUNDNESS TCG</h1>
 
 <div class="auth-container">
     <h1 class="title">USER AUTH</h1>
     <p class="subtitle">Connect Discord to sync your data</p>
+=======
+<div class="auth-container">
+    <h1 class="title">SOUNDNESS</h1>
+    <p class="subtitle">Secure Network Gateway</p>
+>>>>>>> 08160c949fcf556be9e1af1e56689caf741aaa67
     
     <button id="discord-btn" class="btn-discord" onclick="handleDiscordLogin()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037 19.736 19.736 0 0 0-4.885 1.515.069.069 0 0 0-.032.027C.533 9.048-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.419-2.157 2.419z"/></svg>
         AUTHORIZE DISCORD
     </button>
+<<<<<<< HEAD
 
     <p style="color: rgba(255, 255, 255, 0.6); font-size: 10px; margin-top: 12px; line-height: 1.4; text-transform: none;">
         *We request your email strictly for Supabase account creation. We will never send spam.
     </p>
 
+=======
+>>>>>>> 08160c949fcf556be9e1af1e56689caf741aaa67
     <div id="msg">READY_FOR_HANDSHAKE</div>
     
     <div class="pq-stack-status">
