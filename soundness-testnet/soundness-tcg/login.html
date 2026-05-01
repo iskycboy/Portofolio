@@ -3,122 +3,182 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SOUNDNESS TCG - Authentication</title>
+<title>SOUNDNESS TCG - Security Terminal</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-    :root { --aqua: #00f2ff; --deep-blue: #050b1a; --glow: 0 0 25px rgba(0,242,255,0.8); --damage: #ff3e3e; --gold: #ffd700; }
-    body { background: radial-gradient(circle at top, #1a3a5a 0%, var(--deep-blue) 100%); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-    .auth-container { background: rgba(0,10,25,0.9); border: 2px solid var(--aqua); padding: 40px; border-radius: 15px; box-shadow: var(--glow); text-align: center; width: 320px; position: relative; z-index: 10; }
-    .title { font-size: 32px; color: var(--aqua); letter-spacing: 5px; text-shadow: var(--glow); margin-top: 0; margin-bottom: 5px; }
-    .subtitle { color: #aaa; font-style: italic; font-size: 14px; margin-bottom: 25px; }
-    input { width: 100%; padding: 12px; margin: 10px 0; background: #111; color: var(--aqua); border: 1px solid var(--aqua); border-radius: 5px; box-sizing: border-box; text-align: center; font-weight: bold; letter-spacing: 1px; outline: none; }
-    input:focus { box-shadow: 0 0 10px var(--aqua); }
-    .btn { width: 100%; padding: 12px; margin-top: 15px; font-size: 16px; background: var(--aqua); color: #000; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; box-shadow: var(--glow); text-transform: uppercase; transition: 0.3s; }
-    .btn:hover:not(:disabled) { transform: scale(1.05); }
-    .btn:disabled { background: #444; color: #888; box-shadow: none; cursor: not-allowed; }
-    .toggle-text { margin-top: 20px; font-size: 12px; color: #aaa; cursor: pointer; text-decoration: underline; transition: 0.2s; }
-    .toggle-text:hover { color: var(--aqua); }
-    #msg { font-size: 12px; margin-top: 15px; font-weight: bold; height: 15px; }
-    #verify-popup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); }
-    .popup-box { background: var(--deep-blue); border: 2px solid var(--aqua); padding: 30px; border-radius: 10px; text-align: center; box-shadow: var(--glow); max-width: 80%; width: 350px; }
+
+    /* MANTRA PEMANGGIL FONT KHUSUS */
+    @font-face {
+        font-family: 'Black Chancery';
+        /* Pastikan nama file di bawah ini SAMA PERSIS dengan file yang kamu download */
+        src: url('fonts/black_chancery.ttf') format('truetype'); 
+    }
+    :root { 
+        --aqua: #00f2ff; 
+        --deep-blue: #050b1a; 
+        --glow: 0 0 20px rgba(0,242,255,0.6); 
+        --damage: #ff3e3e; 
+        --gold: #ffd700; 
+        --discord: #5865F2; /* Discord Blurple */
+        --grid-line: rgba(0, 242, 255, 0.05);
+    }
+    
+    body { 
+        background-color: var(--deep-blue);
+        background-image: url('images/bg-game.webp'); 
+        background-size: cover;      
+        background-position: center; 
+        background-attachment: fixed;
+        color: #fff; 
+        font-family: 'Courier New', Courier, monospace;
+        margin: 0; 
+        display: flex; 
+        
+        /* MANTRA BARU: Menyusun elemen dari atas ke bawah */
+        flex-direction: column; 
+        
+        justify-content: center; 
+        align-items: center; 
+        height: 100vh; 
+        overflow: hidden; 
+        position: relative;
+    }
+
+    body::before {
+        content: ""; position: absolute; inset: 0;
+        /* Ubah warna hitam pekat menjadi hitam transparan (0.8) di pinggiran */
+        background: radial-gradient(circle at center, rgba(0,0,0,0) 20%, rgba(2, 6, 17, 0.8) 100%);
+        pointer-events: none; z-index: 1;
+    }
+
+    .auth-container { 
+        background: rgba(5, 11, 26, 0.6); 
+        backdrop-filter: blur(12px); 
+        border: 1px solid rgba(0,242,255,0.2); 
+        border-top: 3px solid var(--aqua);
+        border-bottom: 3px solid var(--aqua);
+        padding: 40px 30px; 
+        border-radius: 8px; 
+        box-shadow: 0 15px 35px rgba(0,0,0,0.5), var(--glow); 
+        text-align: center; 
+        z-index: 10; 
+        animation: bootUp 0.8s ease-out;
+
+        /* --- KODE KARET ELASTIS --- */
+        width: 90%; /* Ambil 90% lebar layar (menyisakan 5% ruang kosong di kiri-kanan) */
+        max-width: 350px; /* JANGAN PERNAH lebih besar dari 350px meskipun layarnya raksasa */
+        box-sizing: border-box; /* Paksa padding masuk ke DALAM ukuran lebar, bukan ke luar */
+    }
+
+    @keyframes bootUp {
+        0% { opacity: 0; transform: scale(0.9) translateY(20px); }
+        100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .title { font-size: 34px; color: var(--aqua); letter-spacing: 8px; text-shadow: var(--glow); margin: 0; text-transform: uppercase; }
+    .subtitle { color: #777; font-size: 12px; letter-spacing: 2px; margin-bottom: 30px; padding-bottom: 10px; border-bottom: 1px dashed rgba(255,255,255,0.1); }
+
+    .btn-discord { 
+        width: 100%; padding: 15px; margin-top: 20px; font-size: 14px; 
+        background: var(--discord); color: #fff; font-weight: bold; 
+        border: none; border-radius: 4px; cursor: pointer; 
+        text-transform: uppercase; letter-spacing: 2px;
+        transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    
+    .btn-discord:hover { filter: brightness(1.2); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(88, 101, 242, 0.4); }
+
+    #msg { font-size: 11px; margin-top: 20px; font-weight: bold; height: 15px; color: var(--gold); }
+
+    .pq-stack-status { position: absolute; bottom: 10px; right: 15px; font-size: 9px; color: rgba(255, 255, 255, 0.4); }
+    .pq-value { color: var(--gold); animation: pulseStatus 1.5s infinite; }
+    @keyframes pulseStatus { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.main-game-title {
+        font-family: 'Black Chancery', serif; 
+        position: absolute; 
+        top: 6%; 
+        width: 100%; 
+        text-align: center; 
+        font-size: clamp(35px, 8vw, 70px); 
+        letter-spacing: clamp(5px, 2vw, 15px); 
+        text-transform: uppercase;
+        z-index: 10; 
+        margin: 0;
+
+        /* --- MAGIC GRADIENT PRO --- */
+        background: linear-gradient(to bottom, #FFD700, #FFF3B0); /* Contoh Emas */
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: block;
+
+        /* Efek pendaran agar menyatu dengan gear steampunk */
+        filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4));
+            
+        animation: bootUp 1.2s ease-out; 
+    }
 </style>
+
+
 </head>
 <body>
 
-<div class="auth-container">
-    <h1 class="title">SOUNDNESS</h1>
-    <p class="subtitle" id="mode-subtitle">Enter your credentials to dive.</p>
-    
-    <input type="text" id="username" placeholder="USERNAME (In-Game)" style="display:none;">
-    <input type="email" id="email" placeholder="EMAIL ADDRESS">
-    <input type="password" id="password" placeholder="PASSWORD">
-    
-    <button id="action-btn" class="btn" onclick="handleAuth()">LOGIN</button>
-    <div id="msg"></div>
-    
-    <div class="toggle-text" onclick="toggleMode()" id="toggle-btn">New Diver? Create an Account</div>
-</div>
+<!-- Teks ini sekarang akan terbang ke coretan kuningmu! -->
+<h1 class="main-game-title">SOUNDNESS TCG</h1>
 
-<div id="verify-popup">
-    <div class="popup-box">
-        <h2 style="color: var(--aqua); letter-spacing: 2px; margin-top: 0;">REGISTRATION SUCCESS</h2>
-        <p style="color: #fff; font-size: 14px; line-height: 1.5; margin-bottom: 25px;">
-            Your Diver Profile has been created!<br><br>
-            You can login directly.
-        </p>
-        <button class="btn" onclick="closePopup()">PROCEED TO LOGIN</button>
+<div class="auth-container">
+    <h1 class="title">USER AUTH</h1>
+    <p class="subtitle">Connect Discord to sync your data</p>
+    
+    <button id="discord-btn" class="btn-discord" onclick="handleDiscordLogin()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037 19.736 19.736 0 0 0-4.885 1.515.069.069 0 0 0-.032.027C.533 9.048-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.419-2.157 2.419z"/></svg>
+        AUTHORIZE DISCORD
+    </button>
+
+    <p style="color: rgba(255, 255, 255, 0.6); font-size: 10px; margin-top: 12px; line-height: 1.4; text-transform: none;">
+        *We request your email strictly for Supabase account creation. We will never send spam.
+    </p>
+
+    <div id="msg">READY_FOR_HANDSHAKE</div>
+    
+    <div class="pq-stack-status">
+        <span style="color:var(--aqua)">PQ-STACK:</span>
+        <span id="pq-status-text" class="pq-value">IDLE_NODE</span>
     </div>
 </div>
 
 <script>
-    const supaClient = window.supabase.createClient('https://nhhqapnuhhvweooeeseh.supabase.co', 'sb_publishable_rS96SvJYsuPikvJ8UFblEA_Gzc9gTys');
-    let isLoginMode = true;
+    const SUPABASE_URL = 'https://nhhqapnuhhvweooeeseh.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_rS96SvJYsuPikvJ8UFblEA_Gzc9gTys';
+    const supaClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     window.onload = async function() {
         const { data: { session } } = await supaClient.auth.getSession();
-        if (session) window.location.href = 'index.html';
+        if (session) window.location.href = 'index.html'; 
     };
 
-    function toggleMode() {
-        isLoginMode = !isLoginMode;
-        document.getElementById('msg').textContent = '';
-        if (isLoginMode) {
-            document.getElementById('username').style.display = 'none';
-            document.getElementById('action-btn').textContent = 'LOGIN';
-            document.getElementById('toggle-btn').textContent = 'New Diver? Create an Account';
-            document.getElementById('mode-subtitle').textContent = 'Enter your credentials to dive.';
-        } else {
-            document.getElementById('username').style.display = 'block';
-            document.getElementById('action-btn').textContent = 'REGISTER';
-            document.getElementById('toggle-btn').textContent = 'Already have an account? Login here';
-            document.getElementById('mode-subtitle').textContent = 'Register to join the depths.';
-        }
-    }
-
-    async function handleAuth() {
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value.trim();
-        const username = document.getElementById('username').value.trim();
+    async function handleDiscordLogin() {
         const msg = document.getElementById('msg');
-        const btn = document.getElementById('action-btn');
+        const pqText = document.getElementById('pq-status-text');
 
-        if (!email || !password) { msg.style.color = 'var(--damage)'; msg.textContent = 'Please fill all required fields!'; return; }
-        if (!isLoginMode && !username) { msg.style.color = 'var(--damage)'; msg.textContent = 'Username is required!'; return; }
+        msg.textContent = 'REDIRECTING_TO_DISCORD...';
+        pqText.textContent = "VERIFYING_ZKP...";
+        pqText.style.color = "#ff00ff";
 
-        msg.style.color = 'var(--gold)'; msg.textContent = 'Processing...'; btn.disabled = true;
-
-        try {
-            if (isLoginMode) {
-                const { data, error } = await supaClient.auth.signInWithPassword({ email, password });
-                if (error) { throw error; }
-                msg.style.color = 'var(--aqua)'; msg.textContent = 'Login successful! Redirecting...';
-                setTimeout(() => window.location.href = 'index.html', 1000);
-            } else {
-                const { data, error } = await supaClient.auth.signUp({ email, password });
-                if (error) { throw error; }
-                
-                if (data.user) {
-                    // PERBAIKAN: Gunakan format destructuring standar Supabase v2 alih-alih .catch()
-                    const { error: dbError } = await supaClient.from('users').insert([{ 
-                        id: data.user.id, 
-                        username: username, 
-                        rank: { points: 0, tierIdx: 0, streak: 0 }, 
-                        inventory: [] 
-                    }]);
-                    if (dbError) console.error("Database Insert Error:", dbError.message);
-                }
-                
-                msg.textContent = ''; btn.disabled = false;
-                document.getElementById('verify-popup').style.display = 'flex';
+        const { data, error } = await supaClient.auth.signInWithOAuth({
+            provider: 'discord',
+            options: {
+                // Pastikan URL ini sudah kamu daftarkan di Discord Developer Portal & Supabase
+                redirectTo: 'https://soundness-tcg.vercel.app/login' 
             }
-        } catch (err) {
-            msg.style.color = 'var(--damage)'; msg.textContent = err.message; btn.disabled = false;
-        }
-    }
+        });
 
-    function closePopup() {
-        document.getElementById('verify-popup').style.display = 'none';
-        toggleMode(); 
+        if (error) {
+            msg.style.color = 'var(--damage)';
+            msg.textContent = 'AUTH_ERROR: ' + error.message;
+            pqText.textContent = "CONN_FAILED";
+            pqText.style.color = "var(--damage)";
+        }
     }
 </script>
 </body>

@@ -1,0 +1,638 @@
+/* =========================================
+   1. VARIABLES & GLOBALS
+========================================= */
+@font-face {
+        font-family: 'Black Chancery';
+        src: url('fonts/black_chancery.ttf') format('truetype'); 
+    }
+
+:root { 
+    --aqua: #00f2ff; 
+    --deep-blue: #050b1a; 
+    --spell: #a200ff; 
+    --trap: #ff44aa; 
+    --damage: #ff3e3e; 
+    --crit: #ffff00; 
+    --glow: 0 0 25px rgba(0,242,255,0.8); 
+    --gold: #ffd700; 
+    --platinum: #e5e4e2; 
+    --master: #ff00ff; 
+    --passive: #ffcc00;
+}
+
+
+html, body {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden !important; /* MANTRA MUTLAK PEMBUNUH SCROLLBAR */
+    background: radial-gradient(circle at top, #1a3a5a 0%, var(--deep-blue) 100%);
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+    box-sizing: border-box;
+    overscroll-behavior: none; /* Mencegah pantulan scroll karet di HP */
+}
+
+/* =========================================
+   2. SCREENS, MENUS & MODALS
+========================================= */
+#loading-screen { position: fixed; inset: 0; background: var(--deep-blue); z-index: 9000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--aqua); font-size: 24px; font-weight: bold; letter-spacing: 3px; text-align: center; padding: 20px; }
+#start-screen { position: fixed; inset: 0; background: radial-gradient(circle at top, rgba(26,58,90,0.5) 0%, rgba(5,11,26,0.98) 100%), url('/images/bg-game.webp'); background-size: cover; background-position: center; background-repeat: no-repeat; z-index: 5000; display: none; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
+#pvp-lobby { position: fixed; inset: 0; background: rgba(0,10,25,0.95); z-index: 5500; display: none; flex-direction: column; align-items: center; justify-content: center; }
+#deck-menu { position: fixed; inset: 0; background: radial-gradient(circle at top, rgba(26,58,90,0.8) 0%, rgba(5,11,26,0.95) 100%), url('images/bg-game.webp'); background-size: cover; background-position: center; z-index: 2000; display: none; flex-direction: column; align-items: center; padding: 40px 20px 20px 20px; overflow: hidden; }
+
+/* --- Modal Layar Menang/Kalah (Campaign & PvP) --- */
+#battle-result { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 4500; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(10px); }
+#game-result-modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(10px); }
+
+/* --- Modal Lore --- */
+#lore-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); background: rgba(0,15,30,0.98); border: 2px solid var(--aqua); padding: 25px; width: 400px; text-align: center; z-index: 3000; border-radius: 12px; box-shadow: var(--glow); max-height: 85vh; flex-direction: column; }
+
+/* --- Modal Tutorial / Field Manual --- */
+#tutorial-modal { 
+    display: none; 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(0, 10, 25, 0.95); 
+    backdrop-filter: blur(10px); 
+    z-index: 8000; /* Pastikan di atas game-area (z-index 100) dan battle-log */
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center;
+    pointer-events: auto; /* Memastikan bisa diklik */
+}
+.tutorial-container { background: rgba(5, 11, 26, 0.8); border: 2px solid var(--aqua); border-radius: 10px; width: 100%; max-width: 800px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: var(--glow); overflow: hidden; }
+.tutorial-header { background: rgba(0, 242, 255, 0.1); border-bottom: 2px solid var(--aqua); padding: 20px; text-align: center; }
+.tutorial-title { color: var(--aqua); margin: 0; letter-spacing: 5px; font-size: 24px; text-shadow: var(--glow); text-transform: uppercase; }
+.tutorial-content { padding: 20px; overflow-y: auto; color: #ddd; line-height: 1.6; font-size: 14px; text-align: left; }
+.tutorial-content::-webkit-scrollbar { width: 8px; } 
+.tutorial-content::-webkit-scrollbar-thumb { background: var(--aqua); border-radius: 4px; }
+.tut-section { margin-bottom: 25px; border-left: 3px solid var(--aqua); padding-left: 15px; background: linear-gradient(90deg, rgba(0,242,255,0.05) 0%, transparent 100%); padding-top: 10px; padding-bottom: 10px; border-radius: 0 8px 8px 0; }
+.tut-section h3 { color: var(--gold); margin-top: 0; margin-bottom: 10px; letter-spacing: 2px; text-transform: uppercase; }
+.tut-keyword { color: var(--aqua); font-weight: bold; }
+.tut-damage { color: var(--damage); font-weight: bold; }
+
+/* --- Texts & Buttons Umum --- */
+/* Gaya Khusus untuk Judul di Lobi Utama */
+    .start-title {
+        font-family: 'Black Chancery', serif; 
+        text-align: center; 
+        font-size: clamp(45px, 11vw, 90px); 
+        text-transform: uppercase;
+        margin: 20px 0;
+
+        /* --- MAGIC GRADIENT TRICK --- */
+        background: linear-gradient(to bottom, #FFD700, #FFF3B0); /* Arah atas ke bawah */
+        -webkit-background-clip: text; /* Potong background mengikuti huruf */
+        -webkit-text-fill-color: transparent; /* Buat warna asli huruf transparan agar gradient terlihat */
+        
+        /* Outline tipis untuk mempertegas bentuk huruf */
+        -webkit-text-stroke: 0.5px rgba(138, 109, 59, 0.5);
+
+        /* Shadow untuk memberikan efek 'Terangkat' dari layar */
+        filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.4));
+        
+        animation: bootUp 1.2s ease-out;
+    }
+.start-subtitle { font-size: 22px; color: var(--gold); font-style: italic; letter-spacing: 3px; margin-bottom: 30px; }
+.menu-btn-group { display: flex; flex-direction: column; gap: 15px; width: 300px; }
+.btn-play-game { padding: 15px; font-size: 20px; background: var(--aqua); color: #000; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; box-shadow: var(--glow); text-transform: uppercase; transition: all 0.2s; width: 100%; }
+.btn-play-game:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 0 30px var(--aqua); }
+.btn-start { padding: 15px 40px; background: var(--aqua); color: #000; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; box-shadow: var(--glow); text-transform: uppercase; transition: 0.2s; }
+.btn-start:hover:not(:disabled) { transform: scale(1.05); }
+.btn-start:disabled { background: #444; color: #888; box-shadow: none; cursor: not-allowed; }
+#ready-btn { padding: 15px 30px; background: #00ffcc; color: black; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px; }
+#ready-btn:disabled { background: #555; cursor: not-allowed; }
+.result-btn { padding: 15px 40px; background: transparent; border: 2px solid white; color: white; font-weight: bold; cursor: pointer; transition: all 0.3s; text-transform: uppercase; }
+.result-btn:hover { background: white; color: black; box-shadow: 0 0 20px rgba(255,255,255,0.5); }
+
+/* --- Result Texts --- */
+#result-title { font-size: 80px; font-weight: bold; text-transform: uppercase; letter-spacing: 10px; margin-bottom: 10px; text-shadow: 0 0 20px currentColor; }
+.victory-text { color: #00ffcc; filter: drop-shadow(0 0 15px #00ffcc); }
+.defeat-text { color: #ff3366; filter: drop-shadow(0 0 15px #ff3366); }
+#result-message { color: white; font-size: 18px; margin-bottom: 30px; opacity: 0.8; }
+
+/* --- Auth Box --- */
+.auth-box { background: rgba(0,10,25,0.9); border: 2px solid var(--aqua); padding: 30px; border-radius: 15px; box-shadow: var(--glow); text-align: center; }
+.auth-input { width: 100%; padding: 10px; margin: 10px 0; background: #111; color: var(--aqua); border: 1px solid var(--aqua); border-radius: 5px; box-sizing: border-box; text-align: center; font-weight: bold; letter-spacing: 1px; }
+
+/* =========================================
+   3. BATTLE ARENA LAYOUT (MAIN GAME)
+========================================= */
+#main-game { display: none; width: 100%; height: 100%; flex-direction: row; position: relative; overflow: hidden; }
+#laser-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 999; }
+
+/* --- Panel Kiri (Scanner & Deskripsi) --- */
+#preview-panel { width: 320px; height: 100vh; background: rgba(0, 20, 40, 0.95); border-right: 3px solid var(--aqua); display: flex; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; z-index: 100; flex-shrink: 0; }
+#preview-panel h2 { color: var(--aqua); letter-spacing: 3px; margin-bottom: 20px; margin-top: 0; text-shadow: var(--glow); font-size: 24px; }
+#big-card-img { width: 180px; height: 262px; border: 3px solid var(--aqua); border-radius: 10px; background-size: cover; background-position: center; box-shadow: var(--glow); margin-bottom: 15px; background-color: #000; flex-shrink: 0; }
+#big-card-name { font-size: 18px; font-weight: bold; color: var(--aqua); text-align: center; margin-bottom: 5px; text-transform: uppercase; }
+#big-card-type { font-size: 14px; font-weight: bold; text-align: center; margin-bottom: 15px; }
+#big-card-desc { font-size: 13px; color: #a0c0ff; text-align: justify; line-height: 1.4; background: rgba(0, 0, 0, 0.5); padding: 15px; border-radius: 8px; border: 1px solid rgba(0,242,255,0.3); width: 100%; box-sizing: border-box; flex: 1 1 auto; overflow-y: auto; margin-bottom: 20px; }
+#big-card-desc::-webkit-scrollbar { width: 4px; } #big-card-desc::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); border-radius: 2px; } #big-card-desc::-webkit-scrollbar-thumb { background: var(--aqua); border-radius: 2px; }
+
+/* --- Kotak Tombol Phase (HD UPGRADE) --- */
+.phase-buttons-container { width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: auto; flex-shrink: 0; }
+
+.phase-btn { 
+    padding: 12px; 
+    background: rgba(0, 15, 30, 0.6); 
+    color: var(--aqua); 
+    border: 1px solid rgba(0, 242, 255, 0.3); 
+    cursor: pointer; 
+    border-radius: 4px; 
+    font-weight: bold; 
+    width: 100%; 
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+    letter-spacing: 2px; 
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(5px);
+    text-shadow: 0 0 5px rgba(0,242,255,0.5);
+}
+
+/* Efek Garis Energi di Samping Kiri */
+.phase-btn::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--aqua); opacity: 0; transition: 0.3s;
+}
+
+/* Reaksi saat di-Hover */
+.phase-btn:hover:not(:disabled) {
+    background: rgba(0, 242, 255, 0.1);
+    border-color: var(--aqua);
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.3), inset 0 0 10px rgba(0,242,255,0.2);
+    transform: translateY(-2px);
+}
+.phase-btn:hover:not(:disabled)::before { opacity: 1; }
+
+/* Status Mati & Aktif */
+.phase-btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: #333; color: #666; background: rgba(0,0,0,0.5); text-shadow: none; }
+.phase-btn.active { background: var(--aqua); color: #000; box-shadow: 0 0 20px var(--aqua); text-shadow: none; }
+
+/* Varian Khusus: Tombol Bahaya (Surrender) */
+.phase-btn.danger { color: var(--damage); border-color: rgba(255, 62, 62, 0.3); text-shadow: 0 0 5px rgba(255, 62, 62, 0.5); }
+.phase-btn.danger::before { background: var(--damage); }
+.phase-btn.danger:hover:not(:disabled) {
+    background: rgba(255, 62, 62, 0.1);
+    border-color: var(--damage);
+    box-shadow: 0 0 15px rgba(255, 62, 62, 0.3), inset 0 0 10px rgba(255, 62, 62, 0.2);
+}
+
+/* --- Area Tengah (Papan Main) --- */
+/* =========================================
+   3. BATTLE ARENA LAYOUT (MAIN GAME)
+========================================= */
+#main-game { display: none; width: 100vw; height: 100vh; max-height: 100vh; flex-direction: row; position: relative; overflow: hidden !important; }
+#laser-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 999; }
+
+/* =========================================
+   3. BATTLE ARENA LAYOUT (MAIN GAME)
+========================================= */
+/* --- Area Tengah (Papan Main) --- */
+
+#game-board-wrapper { 
+    flex-grow: 1; 
+    display: flex; 
+    flex-direction: column; 
+    height: 100vh; 
+    max-height: 100vh; /* Kunci batas maksimal */
+    position: relative; 
+    overflow: hidden !important; 
+    
+    /* MANTRA BAWAH LAUT: Menggabungkan Sinar Permukaan dan Kedalaman Palung */
+    background: 
+        radial-gradient(circle at 50% -20%, rgba(0, 242, 255, 0.4) 0%, transparent 50%), 
+        linear-gradient(to bottom, #064073 0%, #021a36 40%, #010612 100%); 
+}
+
+/* Efek Bias Cahaya (Caustics / God Rays) di dalam air */
+#game-board-wrapper::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: repeating-linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.02) 0px,
+        rgba(255, 255, 255, 0.02) 2px,
+        transparent 2px,
+        transparent 20px
+    );
+    z-index: 0; /* Taruh paling belakang */
+    pointer-events: none; /* Jangan sampai menghalangi klik mouse */
+}
+
+/* KUNCI UTAMA: Ganti overflow-y: auto menjadi hidden! */
+#game-area { 
+    flex-grow: 1; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: space-evenly; 
+    align-items: center; 
+    overflow: hidden !important; /* Tidak boleh ada scrollbar di dalam arena */
+    padding: 20px; 
+    box-sizing: border-box; 
+    
+    /* BAUT VIP AGAR KARTU BERADA DI ATAS AIR */
+    position: relative; 
+    z-index: 1; 
+    width: 100%; /* Memastikan area membentang sempurna */
+}
+
+.field-row { display: flex; gap: 20px; margin: 5px auto; justify-content: center; }
+.slot { width: 95px; height: 135px; border: 2px solid rgba(0,242,255,0.1); border-radius: 10px; background: rgba(0,80,150,0.1); position: relative; display: flex; justify-content: center; align-items: center; transition: 0.3s; }
+
+/* Player Hand Area */
+#hand-container { width: 100%; height: 160px; flex-shrink: 0; background: rgba(0,15,30,0.95); border-top: 3px solid var(--aqua); display: flex; flex-direction: column; justify-content: flex-end; position: relative; z-index: 50; }
+#hand { display: flex; gap: 10px; justify-content: center; width: 100%; padding-bottom: 15px; }
+
+/* --- UI Indicators (ULTRA-HD UPGRADE) --- */
+.ui-slot-container { 
+    width: 60px; 
+    height: 70px; 
+    background: rgba(0, 15, 30, 0.4); /* Dibuat lebih transparan */
+    backdrop-filter: blur(8px); /* EFEK KACA BURAM (Glassmorphism) */
+    border: 1px solid rgba(0, 242, 255, 0.5); 
+    border-radius: 8px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 10px; 
+    font-weight: bold; 
+    flex-shrink: 0; 
+    transition: 0.3s;
+    box-shadow: inset 0 0 15px rgba(0, 242, 255, 0.1), 0 5px 15px rgba(0,0,0,0.5); /* Bayangan dalam dan luar */
+}
+.ui-slot-container:hover {
+    border-color: #fff;
+    box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.4), 0 0 15px var(--aqua);
+    transform: translateY(-2px);
+}
+
+.ui-count { font-size: 18px; margin-top: 5px; text-shadow: 0 0 10px var(--aqua); }
+.ui-count.fatigue-warning { color: #ff00ff !important; animation: pulseFatigue 1s infinite; text-shadow: 0 0 15px #ff00ff; }
+
+/* Upgrade HP Bar menjadi Tabung Energi Plasma */
+.hp-bar-bg { 
+    width: 100%; 
+    max-width: 350px; 
+    height: 22px; 
+    background: rgba(0, 5, 15, 0.8); 
+    border-radius: 12px; 
+    border: 2px solid rgba(0, 242, 255, 0.3); 
+    overflow: hidden; 
+    position: relative; 
+    margin: 0 auto;
+    box-shadow: inset 0 0 10px #000, 0 0 10px rgba(0,242,255,0.2);
+}
+
+/* Animasi Energi Mengalir pada HP */
+.hp-bar-fill { 
+    width: 100%; 
+    height: 100%; 
+    background: linear-gradient(90deg, #00ff88, #00b3ff); /* Gradasi warna */
+    box-shadow: inset 0 0 8px rgba(255,255,255,0.5); /* Cahaya dari dalam */
+    transition: width 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+}
+
+/* --- EFEK ANCAMAN (RED PLASMA) UNTUK MUSUH --- */
+
+/* Menimpa warna energi plasma khusus untuk bar musuh */
+#enemy-bar {
+    background: linear-gradient(90deg, #ff0044, #ff6600) !important; /* Gradasi Merah ke Oranye Api */
+    box-shadow: inset 0 0 15px rgba(255, 0, 0, 0.8) !important; /* Pijaran merah dari dalam */
+}
+
+/* Mengubah warna teks angka System Integrity musuh menjadi Merah Bahaya */
+#enemy-hp-text {
+    color: var(--damage) !important;
+    text-shadow: 0 0 10px var(--damage), 0 0 20px var(--damage) !important;
+}
+
+/* Mengubah warna bingkai avatar bos musuh agar selaras */
+#battle-enemy-avatar {
+    border-color: var(--damage) !important;
+    box-shadow: 0 0 15px rgba(255, 62, 62, 0.6) !important;
+}
+
+/* Garis-garis diagonal (Scanlines) yang bergerak di dalam HP Bar */
+.hp-bar-fill::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background-image: linear-gradient(
+        45deg, 
+        rgba(255, 255, 255, 0.2) 25%, 
+        transparent 25%, 
+        transparent 50%, 
+        rgba(255, 255, 255, 0.2) 50%, 
+        rgba(255, 255, 255, 0.2) 75%, 
+        transparent 75%, 
+        transparent
+    );
+    background-size: 20px 20px;
+    animation: moveStripes 1s linear infinite;
+}
+
+@keyframes moveStripes {
+    0% { background-position: 0 0; }
+    100% { background-position: 20px 0; }
+}
+
+#turn-indicator { 
+    font-weight: bold; 
+    color: #fff; 
+    font-size: 20px; 
+    letter-spacing: 4px; 
+    text-shadow: 0 0 10px var(--aqua), 0 0 20px var(--aqua); 
+    padding: 5px 20px;
+    background: rgba(0, 242, 255, 0.1);
+    border-radius: 20px;
+    border: 1px solid rgba(0, 242, 255, 0.3);
+}
+
+/* =========================================
+   4. CARDS & VISUAL EFFECTS
+========================================= */
+.card { width: 88px; height: 128px; border-radius: 8px; border: 2px solid var(--aqua); background-color: #0a1a2f; background-size: cover; background-position: center; cursor: pointer; transition: transform 0.3s ease; position: relative; animation: float 3s infinite ease-in-out; pointer-events: auto; z-index: 100; overflow: hidden; }
+.card.defense-mode { transform: rotate(90deg) !important; border-color: #aaa; }
+.card.active-glow { box-shadow: 0 0 50px #fff, var(--glow) !important; transform: scale(1.2) !important; }
+.card.defense-mode.active-glow { transform: rotate(90deg) scale(1.2) !important; }
+.card.spell { border-color: var(--spell); box-shadow: 0 0 10px var(--spell); } 
+.card.trap { border-color: var(--trap); box-shadow: 0 0 10px var(--trap); }
+.card.set-down { background-image: none !important; background-color: #333; border-color: #555; box-shadow: none; }
+.passive-text { color: var(--passive); font-weight: bold; font-style: italic; display: block; border-bottom: 1px dashed var(--passive); padding-bottom: 5px; margin-bottom: 6px; }
+
+#enemy-boss-card { border-color: var(--damage); box-shadow: 0 0 15px var(--damage); pointer-events: none; }
+.minion-card { border-color: #ff9999; box-shadow: 0 0 10px #ff9999; pointer-events: none; filter: brightness(0.8); }
+
+/* Hologram Scanner Effect FIX */
+.card::before, .card-item::before { content: ""; position: absolute; top: -100%; left: 0; width: 100%; height: 40px; background: linear-gradient(to bottom, transparent, rgba(0, 242, 255, 0.4), transparent); box-shadow: 0 0 15px rgba(0, 242, 255, 0.3); z-index: 10; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+.card:hover::before, .card-item:hover::before { opacity: 1; animation: hologramScan 1.5s linear infinite; }
+.card:hover, .card-item:hover { border-color: #fff !important; box-shadow: 0 0 15px var(--aqua) !important; filter: brightness(1.2); }
+
+/* Kembalikan Ikon Trap & Selected */
+.card.set-down::after { display: block !important; content: "TRAP"; color: #ff44aa; font-size: 10px; font-weight: bold; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+
+/* Deck Builder Cards */
+.card-item { width: 90px; height: 130px; border-radius: 8px; border: 2px solid var(--aqua); background-color: #0a1a2f; background-size: cover; background-position: center; cursor: pointer; transition: 0.3s; position: relative; flex-shrink: 0; overflow: hidden; }
+.card-item.selected { border-color: #fff; box-shadow: 0 0 20px #fff; transform: scale(1.05); }
+.card-item.selected::after { display: flex !important; content: "✓"; position: absolute; top: -10px; right: -10px; background: #fff; color: #000; border-radius: 50%; width: 25px; height: 25px; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--aqua); }
+.card-item.locked { filter: grayscale(1) brightness(0.3); border-color: #333; background-color: #050b1a; }
+.card-item.locked::after { display: block !important; content: "🔒"; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 24px; color: rgba(255,255,255,0.4); }
+.type-badge { position: absolute; top: 5px; left: 5px; font-size: 10px; padding: 2px 5px; border-radius: 3px; font-weight: bold; text-transform: uppercase; background: rgba(0,0,0,0.7); }
+.badge-monster { color: var(--aqua); border: 1px solid var(--aqua); } .badge-spell { color: var(--spell); border: 1px solid var(--spell); } .badge-trap { color: var(--trap); border: 1px solid var(--trap); }
+
+/* =========================================
+   5. BATTLE LOG & DASHBOARD
+========================================= */
+#rank-dashboard { position: fixed; top: 15px; right: 15px; background: rgba(0,0,0,0.85); padding: 15px 25px; border: 2px solid var(--aqua); border-radius: 15px; z-index: 2500; display: flex; flex-direction: column; gap: 8px; text-align: right; box-shadow: 0 0 20px rgba(0,242,255,0.2); width: 220px; box-sizing: border-box; }
+.rank-icon { font-weight: bold; font-size: 24px; text-transform: uppercase; letter-spacing: 3px; }
+
+#battle-log { position: fixed; right: 15px; top: 120px; width: 220px; height: 250px; background: rgba(0,10,25,0.85); backdrop-filter: blur(5px); border: 1px solid rgba(0,242,255,0.4); border-radius: 10px; padding: 10px; font-size: 11px; overflow-y: auto; overflow-x: hidden; word-wrap: break-word; overflow-wrap: break-word; z-index: 4000; display: none; flex-direction: column; gap: 5px; box-shadow: 0 0 15px rgba(0,242,255,0.2); pointer-events: auto; }
+#battle-log::-webkit-scrollbar { width: 5px; } 
+#battle-log::-webkit-scrollbar-thumb { background: var(--aqua); border-radius: 3px; }
+#battle-log b { color: var(--aqua); font-size: 13px; border-bottom: 1px solid rgba(0,242,255,0.4); padding-bottom: 4px; margin-bottom: 4px; letter-spacing: 1px; text-shadow: 1px 1px 2px #000; flex-shrink: 0; }
+#battle-log-content { overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 4px; padding-right: 3px; }
+.log-entry { border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; line-height: 1.4; text-shadow: 1px 1px 2px #000; animation: logSlide 0.3s ease-out; word-break: break-word; animation: textGlow 0.5s ease-out; }
+.log-player { color: var(--aqua); font-weight: bold; } .log-enemy { color: #ff6b6b; font-weight: bold; } .log-system { color: var(--gold); font-style: italic; } .log-fatigue { color: #ff00ff; font-weight: bold; font-style: italic; text-shadow: 0 0 5px #ff00ff; }
+
+.pq-telemetry-box { position: fixed; top: 15px; right: 15px; background: rgba(0, 10, 25, 0.8); border: 1px solid var(--aqua); padding: 5px 10px; font-size: 10px; color: var(--aqua); z-index: 9999; backdrop-filter: blur(5px); border-radius: 4px; box-shadow: 0 0 10px rgba(0,242,255,0.2); text-align: right; pointer-events: none; }
+.pq-data { color: #fff; }
+
+/* =========================================
+   6. DECK BUILDER & ALBUM
+========================================= */
+.filter-btn { padding: 6px 15px; background: #111; color: var(--aqua); border: 1px solid var(--aqua); border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.3s; letter-spacing: 1px; }
+.filter-btn:hover { background: #222; }
+.filter-btn.active { background: var(--aqua); color: #000; box-shadow: var(--glow); }
+#library-scroll-area { flex-grow: 1; overflow-y: auto; width: 100%; display: flex; flex-direction: column; align-items: center; padding-right: 5px; margin-bottom: 10px; margin-top: 10px; }
+#library-scroll-area::-webkit-scrollbar { width: 8px; } #library-scroll-area::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; } #library-scroll-area::-webkit-scrollbar-thumb { background: var(--aqua); border-radius: 4px; }
+#deck-action-bar { display: flex; justify-content: center; align-items: center; gap: 30px; width: 100%; max-width: 900px; padding-top: 15px; border-top: 2px solid rgba(0,242,255,0.3); flex-shrink: 0; }
+.deck-section-title { width: 100%; max-width: 900px; text-align: left; color: var(--gold); border-bottom: 1px solid var(--gold); margin-bottom: 10px; font-weight: bold; letter-spacing: 2px; margin-top: 15px; }
+.library-grid { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-bottom: 25px; width: 100%; max-width: 900px; padding: 10px 20px 20px 20px; box-sizing: border-box; align-content: flex-start; }
+.info-btn { position: absolute; top: -10px; left: -10px; background: #111; color: var(--aqua); border-radius: 50%; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-family: serif; font-size: 14px; border: 2px solid var(--aqua); z-index: 10; transition: 0.2s; }
+.info-btn:hover { background: var(--aqua); color: #000; transform: scale(1.2); }
+#lore-modal-content { overflow-y: auto; flex-grow: 1; padding-right: 10px; }
+#lore-modal-content::-webkit-scrollbar { width: 8px; } #lore-modal-content::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; } #lore-modal-content::-webkit-scrollbar-thumb { background: var(--aqua); border-radius: 4px; }
+#lore-img { width: 180px; height: 260px; border: 3px solid var(--aqua); border-radius: 10px; background-size: cover; background-position: center; box-shadow: var(--glow); margin: 0 auto 15px auto; background-color: #000; flex-shrink: 0; }
+
+/* =========================================
+   7. ANIMATIONS
+========================================= */
+.dmg-text { position: absolute; font-weight: bold; font-size: 38px; pointer-events: none; animation: floatUp 1s forwards; z-index: 1000; text-shadow: 2px 2px #000; }
+.bubble { position: absolute; bottom: -50px; background: rgba(255,255,255,0.2); border-radius: 50%; animation: rise 8s infinite ease-in; pointer-events: none; }
+@keyframes flashWhite { 0% { filter: brightness(1); box-shadow: 0 0 0px #fff; } 50% { filter: brightness(4); box-shadow: 0 0 50px #fff, 0 0 100px var(--aqua); transform: scale(1.15); } 100% { filter: brightness(1); box-shadow: 0 0 0px #fff; } }
+.flash-effect { animation: flashWhite 0.4s ease-out; z-index: 1000; }
+@keyframes flashSpell { 0% { filter: brightness(1); box-shadow: 0 0 0px var(--spell); } 50% { filter: brightness(3); box-shadow: 0 0 100px var(--spell), 0 0 200px #fff; transform: scale(1.3) translateY(-20px); } 100% { filter: brightness(1); box-shadow: 0 0 0px var(--spell); transform: scale(1) translateY(0); } }
+.flash-spell { animation: flashSpell 0.8s ease-out; z-index: 1050; }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes pulseFatigue { 0% { transform: scale(1); } 50% { transform: scale(1.3); text-shadow: 0 0 10px #ff00ff; } 100% { transform: scale(1); } }
+@keyframes textGlow { from { color: #fff; text-shadow: 0 0 10px var(--aqua); } to { text-shadow: 1px 1px 2px #000; } }
+@keyframes logSlide { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes floatUp { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: translateY(-120px) scale(1.5); opacity: 0; } }
+@keyframes rise { 0% { transform: translateY(0); opacity: 0; } 50% { opacity: 0.4; } 100% { transform: translateY(-110vh); opacity: 0; } }
+@keyframes hologramScan { 0% { top: -100%; } 100% { top: 100%; } }
+@keyframes drawCardAnim { 0% { transform: translateY(150px) scale(0.7) rotate(-15deg); opacity: 0; } 100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; } }
+@keyframes glitchAnim { 0% { transform: translate(0); filter: none; } 20% { transform: translate(-5px, 2px) skewX(3deg); filter: drop-shadow(-4px 0 0 rgba(255, 62, 62, 0.9)) drop-shadow(4px 0 0 rgba(0, 242, 255, 0.9)); } 40% { transform: translate(5px, -2px) skewX(-3deg); filter: drop-shadow(4px 0 0 rgba(255, 62, 62, 0.9)) drop-shadow(-4px 0 0 rgba(0, 242, 255, 0.9)); } 60% { transform: translate(-3px, 3px) skewX(1deg); filter: drop-shadow(-2px 0 0 rgba(255, 62, 62, 0.9)) drop-shadow(2px 0 0 rgba(0, 242, 255, 0.9)); } 80% { transform: translate(3px, -3px) skewX(-1deg); filter: drop-shadow(2px 0 0 rgba(255, 62, 62, 0.9)) drop-shadow(-2px 0 0 rgba(0, 242, 255, 0.9)); } 100% { transform: translate(0); filter: none; } }
+.shake { animation: glitchAnim 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+@keyframes shatterAnim { 0% { transform: scale(1); filter: brightness(2) contrast(1.5); opacity: 1; } 20% { transform: translate(-10px,10px) skew(-15deg); filter: brightness(3) sepia(1); opacity: 1; } 40% { transform: translate(10px,-10px) skew(15deg) scale(1.1); opacity: 0.8; } 60% { transform: translate(-15px,15px) scale(1.2) rotate(-10deg); opacity: 0.5; filter: hue-rotate(90deg) blur(2px); } 100% { transform: translateY(80px) scale(0) rotate(45deg); opacity: 0; filter: blur(10px); } }
+.shatter { animation: shatterAnim 0.8s forwards !important; }
+#hand .card { animation: drawCardAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
+
+/* =========================================
+   ENTITAS AMBIENT: HD SPRITE FISHES
+========================================= */
+.hd-fish-container {
+    position: absolute;
+    pointer-events: none;
+    z-index: 0;
+    /* Kita biarkan ukurannya dinamis mengikuti gambar, tapi dibatasi */
+    height: 40px; 
+}
+
+/* Gambar Ikan HD Asli */
+.hd-fish-sprite {
+    height: 100%;
+    width: auto; /* Mempertahankan proporsi asli gambar */
+    
+    /* MANTRA PENYATUAN LINGKUNGAN (ENVIRONMENT BLENDING):
+       1. opacity: 0.6 -> Membuatnya sedikit transparan dalam air.
+       2. brightness(0.5) -> Meredupkan warna warni aslinya agar tidak mencolok.
+       3. sepia(0.5) hue-rotate(180deg) -> Mencucinya dengan rona kebiruan laut.
+       4. drop-shadow -> Memberikan cahaya bioluminesens khas palung laut.
+    */
+    opacity: 0.6;
+    filter: brightness(0.5) sepia(0.5) hue-rotate(180deg) drop-shadow(0 0 15px rgba(0, 242, 255, 0.4));
+    
+    /* Fisika berenang natural (Meliuk naik turun) */
+    animation: organicSwim 4s ease-in-out infinite;
+}
+
+@keyframes organicSwim {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-12px) rotate(-8deg); } 
+    75% { transform: translateY(12px) rotate(8deg); }   
+}
+
+@keyframes glideRight { from { left: -15%; } to { left: 115%; } }
+@keyframes glideLeft { from { left: 115%; } to { left: -15%; } }
+
+
+
+/* --- EFEK HOVER 3D (HAND CARDS) --- */
+#hand {
+    perspective: 800px; 
+}
+#hand .card {
+    transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease !important;
+    transform-origin: bottom center !important; 
+    will-change: transform; 
+}
+#hand .card:hover {
+    transform: translateY(-30px) scale(1.2) rotateX(15deg) !important; 
+    box-shadow: 0 20px 40px rgba(0,0,0,0.8), 0 0 25px var(--aqua) !important; 
+    z-index: 9999 !important; 
+    cursor: grab; 
+}
+#hand .card:nth-child(1) { animation-delay: 0.00s; } #hand .card:nth-child(2) { animation-delay: 0.08s; }
+#hand .card:nth-child(3) { animation-delay: 0.16s; } #hand .card:nth-child(4) { animation-delay: 0.24s; }
+#hand .card:nth-child(5) { animation-delay: 0.32s; } #hand .card:nth-child(6) { animation-delay: 0.40s; }
+#hand .card:nth-child(7) { animation-delay: 0.48s; } #hand .card:nth-child(8) { animation-delay: 0.56s; }
+
+/* =========================================
+   8. RESPONSIVE / MOBILE
+========================================= */
+#mobile-phase-buttons { display: none; }
+@media (max-width: 1200px) { #game-area { padding-right: 10px; } }
+@media (max-width: 850px), (max-aspect-ratio: 3/4) {
+    .start-title { font-size: 36px; } 
+    .btn-play-game { padding: 10px 30px; font-size: 20px; } 
+    #deck-menu > div:first-child > div { flex-wrap: wrap; } 
+    #filter-container { flex-wrap: wrap; }
+    
+    #preview-panel { width: 120px; padding: 10px 5px; border-right-width: 1px; } 
+    #preview-panel h2 { font-size: 11px; margin-bottom: 5px; letter-spacing: 1px; } 
+    #big-card-img { width: 85px; height: 125px; border-width: 2px; margin-bottom: 5px; } 
+    #big-card-name { font-size: 10px; margin-bottom: 2px; } 
+    #big-card-type { font-size: 8px; margin-bottom: 5px; } 
+    #big-card-desc { font-size: 8px; padding: 5px; margin-bottom: 5px; } 
+    .passive-text { font-size: 8px; padding-bottom: 2px; margin-bottom: 2px; } 
+    .phase-buttons-container { display: none; }
+    
+    #game-area { justify-content: flex-start; padding-top: 5px; }
+    .card { width: 42px; height: 60px; border-width: 1px; border-radius: 3px; } 
+    .slot { width: 46px; height: 64px; border-width: 1px; border-radius: 4px; } 
+    .field-row { gap: 5px; margin: 3px auto; }
+    .ui-slot-container { width: 30px; height: 40px; font-size: 6px; border-width: 1px; } 
+    .ui-count { font-size: 10px; margin-top: 1px; } 
+    .hp-bar-bg { height: 8px; border-width: 1px; max-width: 120px; margin-top: 2px; } 
+    #enemy-ui > div > div:nth-child(2) > div:last-child, #player-ui > div:last-child > div:nth-child(2) > div:last-child { font-size: 9px !important; margin-top: 2px !important; } 
+    #turn-indicator { font-size: 14px; margin: 5px 0; } 
+    .stat-box { font-size: 5px !important; padding: 1px 2px !important; transform-origin: center right; }
+    
+    #hand-container { height: 120px; } 
+    #hand { gap: 5px; padding-bottom: 5px; }
+    #mobile-phase-buttons { 
+        display: flex; 
+        width: 100%; 
+        justify-content: space-between; 
+        gap: 5px; /* Jarak antar tombol */
+        padding: 8px 5px; 
+        box-sizing: border-box; 
+        background: rgba(0, 5, 15, 0.95); 
+        border-top: 2px solid var(--aqua); 
+        pointer-events: auto; 
+        backdrop-filter: blur(10px);
+    }
+    .mobile-btn { 
+        flex: 1; /* KUNCI RESPONSIVE: Paksa semua tombol berbagi ruang layar sama rata */
+        padding: 10px 0; 
+        font-size: 9px; 
+        background: rgba(0, 15, 30, 0.6); 
+        color: var(--aqua); 
+        border: 1px solid rgba(0, 242, 255, 0.3); 
+        border-radius: 4px; 
+        font-weight: bold; 
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        transition: 0.2s;
+    }
+    .mobile-btn.active { background: var(--aqua); color: #000; box-shadow: 0 0 10px var(--aqua); } 
+    .mobile-btn:disabled { opacity: 0.3; border-color: #444; color: #888; } 
+    .mobile-btn.danger { color: var(--damage); border-color: rgba(255, 62, 62, 0.4); }
+
+    #battle-log { top: auto !important; bottom: 125px !important; right: 5px !important; left: auto !important; width: 120px !important; height: 100px !important; max-height: 100px !important; font-size: 8px !important; padding: 5px !important; opacity: 0.7 !important; pointer-events: auto !important; z-index: 4000 !important; background: rgba(0,10,25,0.85) !important; }
+    #battle-log:active { opacity: 1 !important; background: rgba(0,10,25,0.98) !important; }
+    #battle-log b { font-size: 10px !important; margin-bottom: 3px !important; } 
+    .log-entry { padding-bottom: 3px !important; line-height: 1.3 !important; }
+    #rank-dashboard { top: 5px !important; right: 5px !important; width: 100px !important; padding: 5px !important; gap: 2px !important; } 
+    .rank-icon { font-size: 12px !important; letter-spacing: 1px !important; } 
+    #rank-dashboard div { font-size: 9px !important; margin-top: 0 !important; padding-top: 2px !important; }
+    
+    #lore-modal { width: 90%; padding: 15px; } 
+    #lore-img { width: 120px; height: 175px; }
+    
+    .pq-telemetry-box { top: 5px; right: 5px; padding: 3px 6px; font-size: 7px; transform-origin: top right; }
+}
+
+/* =========================================
+   VERTICAL RESPONSIVE (UNTUK LAYAR LAPTOP / PENDEK)
+========================================= */
+@media (max-height: 800px) {
+    /* (Kode Preview Panel yang sudah ada biarkan saja) */
+    #preview-panel { padding: 10px 15px; }
+    #preview-panel h2 { font-size: 18px; margin-bottom: 10px; }
+    #big-card-img { width: 135px; height: 196px; margin-bottom: 10px; border-width: 2px; }
+    #big-card-name { font-size: 15px; }
+    #big-card-type { margin-bottom: 5px; font-size: 12px; }
+    #big-card-desc { padding: 10px; margin-bottom: 10px; font-size: 11px; }
+    .phase-buttons-container { gap: 5px; }
+    .phase-btn { padding: 8px; font-size: 11px; letter-spacing: 1px; }
+
+    /* --- KODE BARU: VAKUM AREA PERTARUNGAN --- */
+    #game-area { padding: 5px 20px; } /* Kurangi jarak atas-bawah arena */
+    .field-row { gap: 10px; margin: 2px auto; } /* Rapatkan barisan kartu */
+    
+    /* Susutkan ukuran kartu di lapangan */
+    .slot { width: 75px; height: 105px; border-width: 1px; }
+    .card { width: 70px; height: 100px; border-width: 1px; }
+    
+    /* Susutkan area tangan agar tidak menutupi HP Bar */
+    #hand-container { height: 120px; }
+    #hand .card { width: 65px; height: 95px; }
+
+    /* Rapatkan Tabung HP dan UI */
+    .hp-bar-bg { height: 15px; margin-top: 5px; }
+    .ui-slot-container { width: 50px; height: 60px; font-size: 9px; }
+    .ui-count { font-size: 14px; }
+}
+
+@media (max-height: 650px) {
+    /* (Kode ekstrem untuk layar super pendek) */
+    #big-card-img { width: 110px; height: 160px; }
+    .phase-btn { padding: 6px; font-size: 10px; }
+    #preview-panel h2 { font-size: 14px; margin-bottom: 5px; }
+
+    /* --- KODE BARU: VAKUM EKSTREM --- */
+    .slot { width: 60px; height: 85px; }
+    .card { width: 55px; height: 80px; }
+    
+    #hand-container { height: 95px; }
+    #hand .card { width: 50px; height: 75px; }
+    
+    .hp-bar-bg { height: 12px; max-width: 250px; }
+    .ui-slot-container { width: 40px; height: 50px; font-size: 8px; }
+    #turn-indicator { font-size: 14px; padding: 2px 10px; }
+}
+
+@media (max-height: 650px) {
+    /* Jika layar super pendek (mode windowed ekstrim) */
+    #big-card-img { width: 110px; height: 160px; }
+    .phase-btn { padding: 6px; font-size: 10px; }
+    #preview-panel h2 { font-size: 14px; margin-bottom: 5px; }
+}
