@@ -686,11 +686,11 @@ bindBtn('btn-close-tutorial', () => {
         window.isMenuMusicPlaying = false; 
     };
     
-    // Arahkan ke Deck Menu, JANGAN langsung startGame() agar pemain bisa pilih kartu lagi
-    window.continueCampaign = function() { 
-        document.getElementById('battle-result').style.display = 'none'; 
-        window.enterDeckMenu(); 
-    };
+   // --- MENGEMBALIKAN FUNGSI NEXT BATTLE LANGSUNG KE ARENA ---
+window.continueCampaign = function() { 
+    document.getElementById('battle-result').style.display = 'none'; 
+    window.startGame(); 
+};
     window.openPvPLobby = function() { window.isPvPMode = true; document.getElementById('pvp-lobby').style.display = 'flex'; document.getElementById('ws-msg').textContent = ''; document.getElementById('room-id').value = Math.random().toString(36).substring(2, 7).toUpperCase(); };
     window.simulatePvPConnection = async function(type) {
         const room = document.getElementById('room-id').value.trim().toUpperCase(); const msg = document.getElementById('ws-msg');
@@ -917,29 +917,24 @@ window.startPvPGame = function() {
     };
 
     // --- STATE TEARDOWN: Pembersih Menyeluruh (Reset Deck Total) ---
+// --- STATE TEARDOWN: Pembersih Menyeluruh (Simpan Memori Deck) ---
 window.clearCardSelections = function() {
-    // 1. Matikan efek menyala pada kartu di Arena Pertempuran
+    // 1. Matikan efek menyala HANYA pada kartu di Arena Pertempuran (#main-game)
     const battleCards = document.querySelectorAll('#main-game .card');
     battleCards.forEach(card => {
         card.classList.remove('selected', 'active', 'highlight', 'active-glow', 'targeting');
         card.style.border = ""; card.style.boxShadow = ""; card.style.filter = ""; card.style.transform = ""; 
     });
-    window.selectedCard = null; window.selectedHandCard = null; window.selectedFieldCard = null; 
 
-    // 2. KOSONGKAN DECK BUILDER (Sesuai keinginanmu)
-    window.selectedLibrary = []; // Hapus memori kartu
-    
-    // Hapus visual garis hijau di lobi
-    const deckCards = document.querySelectorAll('.card-item');
-    deckCards.forEach(card => card.classList.remove('selected'));
-    
-    // Reset teks dan matikan tombol INITIATE DUEL
-    let counterEl = document.getElementById('counter');
-    if (counterEl) counterEl.textContent = "0 / 8 Selected";
-    let startBtn = document.getElementById('start-btn');
-    if (startBtn) startBtn.disabled = true; 
+    // 2. Kosongkan target bidikan memori di Arena
+    window.selectedCard = null; 
+    window.selectedHandCard = null; 
+    window.selectedFieldCard = null; 
 
-    console.log("System Cleanup: All Data and Deck Memory Purged Safely.");
+    // 3. KITA BIARKAN window.selectedLibrary TETAP ADA (Jangan Dikosongkan!)
+    // Agar pemain bisa langsung "Retry Battle" tanpa kartu menghilang.
+    
+    console.log("System Cleanup: Arena Visuals Purged. Deck Memory Saved for Retry!");
 };
 
    window.surrenderGame = function() {
