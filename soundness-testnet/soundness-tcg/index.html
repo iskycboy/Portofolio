@@ -686,8 +686,11 @@ bindBtn('btn-close-tutorial', () => {
         window.isMenuMusicPlaying = false; 
     };
     
-    window.continueCampaign = function() { document.getElementById('battle-result').style.display = 'none'; window.startGame(); };
-
+    // Arahkan ke Deck Menu, JANGAN langsung startGame() agar pemain bisa pilih kartu lagi
+    window.continueCampaign = function() { 
+        document.getElementById('battle-result').style.display = 'none'; 
+        window.enterDeckMenu(); 
+    };
     window.openPvPLobby = function() { window.isPvPMode = true; document.getElementById('pvp-lobby').style.display = 'flex'; document.getElementById('ws-msg').textContent = ''; document.getElementById('room-id').value = Math.random().toString(36).substring(2, 7).toUpperCase(); };
     window.simulatePvPConnection = async function(type) {
         const room = document.getElementById('room-id').value.trim().toUpperCase(); const msg = document.getElementById('ws-msg');
