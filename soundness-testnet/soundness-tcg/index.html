@@ -1882,6 +1882,67 @@ window.triggerQuantumSync = function(cardType, rarity) {
     }
 };
 
+
+// =========================================================================
+    // INJEKSI SISTEM UI MOBILE (TOGGLE LOG & RELOKASI EXPAND)
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+        
+        // 1. PINDAHKAN TOMBOL EXPAND KE DALAM SCANNER PANEL
+        const expandBtn = document.getElementById('btn-fullscreen');
+        const previewPanel = document.getElementById('preview-panel');
+        if(expandBtn && previewPanel) {
+            // Masukkan tombol expand menjadi elemen terakhir di dalam panel kiri
+            previewPanel.appendChild(expandBtn);
+        }
+
+        // 2. BUAT TOMBOL BUKA/TUTUP BATTLE LOG KHUSUS MOBILE
+        const logToggleBtn = document.createElement('button');
+        logToggleBtn.id = 'mobile-log-toggle';
+        logToggleBtn.innerHTML = `BATTLE LOG <div id="log-notif-dot" class="log-notif"></div>`;
+        document.getElementById('main-game').appendChild(logToggleBtn);
+
+        const battleLogEl = document.getElementById('battle-log');
+        const notifDot = document.getElementById('log-notif-dot');
+
+        // Sembunyikan Log secara default jika dimainkan di HP
+        if(window.innerWidth <= 850) {
+            battleLogEl.classList.add('log-hidden-mobile');
+        }
+
+        // 3. LOGIKA KLIK BUKA/TUTUP LOG
+        logToggleBtn.addEventListener('click', function() {
+            if(window.safePlay) window.safePlay(window.sfxMainBtn);
+            battleLogEl.classList.toggle('log-hidden-mobile');
+            
+            // Matikan lampu notifikasi saat laci log dibuka
+            if(!battleLogEl.classList.contains('log-hidden-mobile')) {
+                notifDot.style.display = 'none';
+            }
+        });
+
+        // 4. BAJAK FUNGSI LOGACTION UNTUK MENYALAKAN NOTIFIKASI
+        const originalLogAction = window.logAction;
+        window.logAction = function(msg, type) {
+            originalLogAction(msg, type); // Tetap jalankan fungsi ngetik aslinya
+            
+            // Cek apakah HP sedang menutup laci log, jika ya, nyalakan lampu notif
+            if(window.innerWidth <= 850 && battleLogEl.classList.contains('log-hidden-mobile')) {
+                notifDot.style.display = 'block'; 
+            }
+        };
+
+        // Sembunyikan tombol toggle log jika kembali ke layar lebar (PC)
+        window.addEventListener('resize', () => {
+            if(window.innerWidth > 850) {
+                logToggleBtn.style.display = 'none';
+                battleLogEl.classList.remove('log-hidden-mobile'); // Paksa tampil di PC
+            } else {
+                logToggleBtn.style.display = 'flex';
+            }
+        });
+    });
+
 </script>
 </body>
 </html>
