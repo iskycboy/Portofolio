@@ -444,6 +444,12 @@ html, body {
 .shatter { animation: shatterAnim 0.8s forwards !important; }
 #hand .card { animation: drawCardAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
 
+.pq-telemetry-box {
+    /* ... kode yang sudah ada ... */
+    overflow: hidden; /* Tambahkan ini sebagai pengaman ekstra */
+    min-width: 140px; /* Beri lebar minimum agar kotak tidak terlalu ciut */
+}
+
 /* =========================================
    ENTITAS AMBIENT: HD SPRITE FISHES
 ========================================= */
@@ -578,6 +584,20 @@ html, body {
     #lore-img { width: 120px; height: 175px; }
     
     .pq-telemetry-box { top: 5px; right: 5px; padding: 3px 6px; font-size: 7px; transform-origin: top right; }
+}
+
+
+/* --- RESPONSIVE FIX UNTUK PQ-STACK TELEMETRY DI MOBILE --- */
+@media screen and (max-width: 768px) {
+    #pq-telemetry {
+        transform: scale(0.65); /* Mengecilkan ukuran keseluruhan menjadi 65% */
+        transform-origin: top right; /* Menarik titik fokus pengecilan ke sudut kanan atas */
+        top: 5px !important; /* Mengurangi jarak dari atas layar */
+        right: 5px !important; /* Mengurangi jarak dari kanan layar */
+        background: rgba(0, 0, 0, 0.85); /* Membuat latar belakang sedikit transparan */
+        pointer-events: none; /* KUNCI UTAMA: Membuat klik/sentuhan tembus ke kartu di bawahnya */
+        z-index: 99; /* Memastikan posisinya tetap melayang di atas */
+    }
 }
 
 /* =========================================
