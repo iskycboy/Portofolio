@@ -569,6 +569,11 @@ bindBtn('btn-close-tutorial', () => {
         try {
             const { data: { user }, error: authError } = await window.supaClient.auth.getUser();
             if (authError || !user) { window.location.href = 'login.html'; return; } 
+
+            if (!user.email) {
+                window.showSafeError("ACCESS DENIED: No active email detected. Please link an email to your Discord account to enter the system.");
+                return; // Hentikan proses secara absolut
+            }
             
            // TEMPEL KODE BARU INI:
             window.currentUserId = user.id;
