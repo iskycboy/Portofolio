@@ -913,6 +913,32 @@ window.startPvPGame = function() {
         window.processRankResult(isWin);
     };
 
+    // --- STATE TEARDOWN: Pembersih Menyeluruh (Reset Deck Total) ---
+window.clearCardSelections = function() {
+    // 1. Matikan efek menyala pada kartu di Arena Pertempuran
+    const battleCards = document.querySelectorAll('#main-game .card');
+    battleCards.forEach(card => {
+        card.classList.remove('selected', 'active', 'highlight', 'active-glow', 'targeting');
+        card.style.border = ""; card.style.boxShadow = ""; card.style.filter = ""; card.style.transform = ""; 
+    });
+    window.selectedCard = null; window.selectedHandCard = null; window.selectedFieldCard = null; 
+
+    // 2. KOSONGKAN DECK BUILDER (Sesuai keinginanmu)
+    window.selectedLibrary = []; // Hapus memori kartu
+    
+    // Hapus visual garis hijau di lobi
+    const deckCards = document.querySelectorAll('.card-item');
+    deckCards.forEach(card => card.classList.remove('selected'));
+    
+    // Reset teks dan matikan tombol INITIATE DUEL
+    let counterEl = document.getElementById('counter');
+    if (counterEl) counterEl.textContent = "0 / 8 Selected";
+    let startBtn = document.getElementById('start-btn');
+    if (startBtn) startBtn.disabled = true; 
+
+    console.log("System Cleanup: All Data and Deck Memory Purged Safely.");
+};
+
    window.surrenderGame = function() {
     // 1. Validasi Pengguna
     if (confirm("Are you sure you want to surrender?")) {
