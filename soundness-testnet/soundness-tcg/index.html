@@ -112,11 +112,18 @@
     </div>
 </div>
     
-<!-- LIVE PQ-STACK TELEMETRY -->
-<div id="pq-telemetry" class="pq-telemetry-box">
-    <div style="margin-bottom: 2px;">PQ-STACK METRICS</div>
+<div id="pq-telemetry" class="pq-telemetry-box" style="overflow: hidden; min-width: 140px;">
+    <div style="margin-bottom: 2px; font-weight:bold; color:var(--gold);">[ PQ-STACK LIVE TELEMETRY ]</div>
     <div class="pq-data">HASH: <span id="pq-hash" style="color: var(--gold);">0x0000...0000</span></div>
-    <div class="pq-data">ZKP : <span id="pq-zkp" style="color: #00ff88;">AWAITING_INPUT</span></div>
+    <div class="pq-data">ZKP : <span id="pq-zkp" style="color: #00ff88;">IDLE_NODE</span></div>
+    
+    <!-- BARU: MONITOR SINKRONISASI KEAMANAN -->
+    <div style="margin-top: 5px; font-size: 8px;">MIGRATION_SYNC: <span id="pq-sync-val">0</span>%</div>
+    <div style="width: 100%; height: 3px; background: #111; border: 1px solid var(--aqua); margin-top: 2px;">
+        <div id="pq-sync-bar" style="width: 0%; height: 100%; background: var(--aqua); transition: 0.3s;"></div>
+    </div>
+    
+    <div id="pq-entropy" style="font-family: monospace; font-size: 8px; color: rgba(0,242,255,0.4); margin-top: 5px; height: 10px; overflow: hidden; white-space: nowrap;">01011010010110100101...</div>
 </div>
 
 <div id="loading-screen">SYNCING DATA...</div>
@@ -954,7 +961,7 @@ window.startPvPGame = function() {
         window.processRankResult(isWin);
     };
 
-    // --- STATE TEARDOWN: Pembersih Menyeluruh (Reset Deck Total) ---
+
 // --- STATE TEARDOWN: Pembersih Menyeluruh (Simpan Memori Deck) ---
 window.clearCardSelections = function() {
     // 1. Matikan efek menyala HANYA pada kartu di Arena Pertempuran (#main-game)
@@ -968,6 +975,15 @@ window.clearCardSelections = function() {
     window.selectedCard = null; 
     window.selectedHandCard = null; 
     window.selectedFieldCard = null; 
+
+    // --- [BARU: RESET QUANTUM SHIELD] ---
+    window.pqSyncProgress = 0;
+    window.isQuantumShieldActive = false;
+    let syncBar = document.getElementById('pq-sync-bar');
+    let syncVal = document.getElementById('pq-sync-val');
+    if (syncBar) { syncBar.style.width = "0%"; syncBar.style.background = "var(--aqua)"; syncBar.style.boxShadow = "none"; }
+    if (syncVal) syncVal.textContent = "0";
+    // ------------------------------------
 
     // 3. KITA BIARKAN window.selectedLibrary TETAP ADA (Jangan Dikosongkan!)
     // Agar pemain bisa langsung "Retry Battle" tanpa kartu menghilang.
@@ -1256,56 +1272,69 @@ return div;
     };
 
     window.playCard = function(card, hIdx) {
-        if (!["MAIN 1", "MAIN 2"].includes(window.currentPhase)) { window.logAction("Cards can only be played in MAIN 1 or MAIN 2!", "damage"); return; }
-        let cType = card.type || "Monster";
-        
-        // Bikin ID unik untuk kartu ini (Penting untuk PVP!)
-        let cardUid = Math.random().toString(36).substr(2, 9);
-        card.uid = cardUid;
+    if (!["MAIN 1", "MAIN 2"].includes(window.currentPhase)) { window.logAction("Cards can only be played in MAIN 1 or MAIN 2!", "damage"); return; }
+    let cType = card.type || "Monster";
 
-        if (cType === "Monster") {
-            let isSpecial = (card.id === 4 || card.id === 5); if (!isSpecial && window.normalSummonUsed) { window.logAction("Normal Summon already used this turn!", "system"); return; }
-            let slotIdx = -1; let slot = null; 
-            for (let i = 0; i < 3; i++) { let s = document.getElementById('m-' + i); if (s && s.innerHTML === "") { slot = s; slotIdx = i; break; } }
-            if (slot) {
-                const ui = window.createCardUI(card, undefined, true); slot.appendChild(ui); if(!isSpecial) window.normalSummonUsed = true; window.logAction(`Summoned ${card.name}${isSpecial ? " (Special Summon)" : ""}.`, "player");
-                
-                // Broadcast Summon Monster ke Musuh
-                if (window.isPvPMode) window.pvpChannel.send({ type: 'broadcast', event: 'summon_monster', payload: { card: card, slotIdx: slotIdx, uid: cardUid } });
+    // Bikin ID unik untuk kartu ini (Penting untuk PVP!)
+    let cardUid = Math.random().toString(36).substr(2, 9);
+    card.uid = cardUid;
 
-                if(card.id === 4 || card.id === 6) { window.logAction("Searcher activated!", "system"); window.drawCard(1); }
-                if(card.id === 7) { window.logAction("Siren Effect: Removed enemy defenses! (-1500 HP)", "system"); window.enemyHP = Math.max(0, window.enemyHP - 1500); window.updateUI(); if(window.enemyHP <= 0) window.checkWinCondition(); }
-                if(card.id === 5 && window.playerGraveyard.length > 0) {
-                    let stIdx = window.playerGraveyard.findIndex(c => c.name.includes("CURIOSITY") || c.name.includes("RESONATOR") || c.name.includes("TRINKET") || c.name.includes("GUARDIAN") || c.name.includes("OVERSEER") || c.name.includes("LING"));
-                    if(stIdx > -1) { let rev = window.playerGraveyard.splice(stIdx, 1)[0]; let origCard = window.DATABASE_CARDS.find(c => c.name === rev.name); if(origCard) { window.handCards.push(origCard); window.logAction(`Guardian Effect: Revived ${rev.name}!`, "system"); } }
-                }
-                window.handCards.splice(hIdx, 1); window.renderHand();
-            } else { window.logAction("No empty monster slots!", "system"); }
-        } else if (cType === "Spell") {
-            document.getElementById('preview-panel').classList.add('flash-spell'); setTimeout(() => document.getElementById('preview-panel').classList.remove('flash-spell'), 800);
-            window.logAction(`Activated Spell: ${card.name}`, "player"); window.playerGraveyard.push({ name: card.name, atk: card.atk || 0, def: card.def || 0 }); window.updateUI();
-            let buffAmt = card.effectVal !== undefined ? card.effectVal : 1000; window.bonusAtk += buffAmt; window.logAction(`All monsters gain +${buffAmt} ATK for the next attack!`, "system");
+    if (cType === "Monster") {
+        let isSpecial = (card.id === 4 || card.id === 5); if (!isSpecial && window.normalSummonUsed) { window.logAction("Normal Summon already used this turn!", "system"); return; }
+        let slotIdx = -1; let slot = null; 
+        for (let i = 0; i < 3; i++) { let s = document.getElementById('m-' + i); if (s && s.innerHTML === "") { slot = s; slotIdx = i; break; } }
+        if (slot) {
+            const ui = window.createCardUI(card, undefined, true); slot.appendChild(ui); if(!isSpecial) window.normalSummonUsed = true; window.logAction(`Summoned ${card.name}${isSpecial ? " (Special Summon)" : ""}.`, "player");
             
-            // Broadcast Spell ke Musuh
-            if (window.isPvPMode) window.pvpChannel.send({ type: 'broadcast', event: 'play_spell', payload: { card: card } });
+            // Broadcast Summon Monster ke Musuh
+            if (window.isPvPMode) window.pvpChannel.send({ type: 'broadcast', event: 'summon_monster', payload: { card: card, slotIdx: slotIdx, uid: cardUid } });
 
-            if(card.id === 8) { window.logAction("Curiosity Effect: Draw 2 cards!", "system"); window.drawCard(2); }
-            let ind = document.getElementById('turn-indicator'); if(ind) ind.textContent = "SPELL ACTIVATED!"; setTimeout(() => { if(ind) ind.textContent = "PHASE: " + window.currentPhase; }, 1500);
+            if(card.id === 4 || card.id === 6) { window.logAction("Searcher activated!", "system"); window.drawCard(1); }
+            if(card.id === 7) { window.logAction("Siren Effect: Removed enemy defenses! (-1500 HP)", "system"); window.enemyHP = Math.max(0, window.enemyHP - 1500); window.updateUI(); if(window.enemyHP <= 0) window.checkWinCondition(); }
+            if(card.id === 5 && window.playerGraveyard.length > 0) {
+                let stIdx = window.playerGraveyard.findIndex(c => c.name.includes("CURIOSITY") || c.name.includes("RESONATOR") || c.name.includes("TRINKET") || c.name.includes("GUARDIAN") || c.name.includes("OVERSEER") || c.name.includes("LING"));
+                if(stIdx > -1) { let rev = window.playerGraveyard.splice(stIdx, 1)[0]; let origCard = window.DATABASE_CARDS.find(c => c.name === rev.name); if(origCard) { window.handCards.push(origCard); window.logAction(`Guardian Effect: Revived ${rev.name}!`, "system"); } }
+            }
+            
+            // --- [KASIR MONSTER: POSISI BENAR] ---
+            if(window.triggerQuantumSync) window.triggerQuantumSync("monster", card.rarity);
             window.handCards.splice(hIdx, 1); window.renderHand();
-        } else if (cType === "Trap") {
-            let slot = null; for (let i = 0; i < 2; i++) { let s = document.getElementById('s-' + i); if (s && s.innerHTML === "") { slot = s; break; } }
-            if (slot) {
-                const ui = window.createCardUI(card, undefined, true); ui.classList.add('set-down'); ui.innerHTML = ""; slot.appendChild(ui); window.activeTrap = { cardObj: card, el: ui }; 
-                window.logAction(`Set 1 Trap card face-down.`, "player"); 
-                
-                // Broadcast Trap ke Musuh
-                if (window.isPvPMode) window.pvpChannel.send({ type: 'broadcast', event: 'set_trap', payload: { cardName: card.name } });
+            // -------------------------------------
+            
+        } else { window.logAction("No empty monster slots!", "system"); }
+    } else if (cType === "Spell") {
+        document.getElementById('preview-panel').classList.add('flash-spell'); setTimeout(() => document.getElementById('preview-panel').classList.remove('flash-spell'), 800);
+        window.logAction(`Activated Spell: ${card.name}`, "player"); window.playerGraveyard.push({ name: card.name, atk: card.atk || 0, def: card.def || 0 }); window.updateUI();
+        let buffAmt = card.effectVal !== undefined ? card.effectVal : 1000; window.bonusAtk += buffAmt; window.logAction(`All monsters gain +${buffAmt} ATK for the next attack!`, "system");
+        
+        // Broadcast Spell ke Musuh
+        if (window.isPvPMode) window.pvpChannel.send({ type: 'broadcast', event: 'play_spell', payload: { card: card } });
 
-                window.handCards.splice(hIdx, 1); window.renderHand();
-            } else { window.logAction("No empty support slots to set Trap!", "system"); }
-        }
-    };
-
+        if(card.id === 8) { window.logAction("Curiosity Effect: Draw 2 cards!", "system"); window.drawCard(2); }
+        let ind = document.getElementById('turn-indicator'); if(ind) ind.textContent = "SPELL ACTIVATED!"; setTimeout(() => { if(ind) ind.textContent = "PHASE: " + window.currentPhase; }, 1500);
+        
+        // --- [KASIR SPELL: POSISI BENAR] ---
+        if(window.triggerQuantumSync) window.triggerQuantumSync("spell", card.rarity);
+        window.handCards.splice(hIdx, 1); window.renderHand();
+        // -----------------------------------
+        
+    } else if (cType === "Trap") {
+        let slot = null; for (let i = 0; i < 2; i++) { let s = document.getElementById('s-' + i); if (s && s.innerHTML === "") { slot = s; break; } }
+        if (slot) {
+            const ui = window.createCardUI(card, undefined, true); ui.classList.add('set-down'); ui.innerHTML = ""; slot.appendChild(ui); window.activeTrap = { cardObj: card, el: ui }; 
+            window.logAction(`Set 1 Trap card face-down.`, "player"); 
+            
+            // Broadcast Trap ke Musuh
+            if (window.isPvPMode) window.pvpChannel.send({ type: 'broadcast', event: 'set_trap', payload: { cardName: card.name } });
+            
+            // --- [KASIR TRAP: POSISI BENAR] ---
+            if(window.triggerQuantumSync) window.triggerQuantumSync("trap", card.rarity);
+            window.handCards.splice(hIdx, 1); window.renderHand();
+            // ----------------------------------
+            
+        } else { window.logAction("No empty support slots to set Trap!", "system"); }
+    }
+};
     window.checkWinCondition = function() {
         if (window.enemyHP <= 0) { document.querySelectorAll('#enemy-ui .card').forEach(e => e.classList.add('shatter')); window.logAction("Threat Neutralized! System Secured.", "system"); window.processRankResult(true); 
         } else if (window.playerHP <= 0) { window.logAction("System Compromised. Auditor Defeated...", "enemy"); window.processRankResult(false); window.saveUserData(); }
@@ -1427,6 +1456,24 @@ return div;
                     if(!attackerEl || attackerEl.dataset.isDead === "true") { setTimeout(() => performEnemyAttack(attackerIndex + 1), 600); return; }
                     let rA = attackerEl.getBoundingClientRect(); let dmg = 0; let attackerName = "Enemy Guardian"; let aiPassive = attackerEl.dataset.passive || "";
                     if(attackerEl.id === 'enemy-boss-card') { dmg = (Math.floor(Math.random() * 300) + 600) * TIER_DMG_MULT[window.rankData.tierIdx||0]; } else { dmg = parseInt(attackerEl.dataset.cardAtk) || 500; attackerName = attackerEl.dataset.cardName; if (aiPassive.includes("[RAGE]")) dmg += window.enemyGraveyard.length * 200; }
+                    
+                    // --- [KABEL 2: INTERSEPSI SHIELD] ---
+                    if (window.isQuantumShieldActive && dmg > 0) {
+                        dmg = Math.floor(dmg / 2); // Diskon damage musuh 50%
+                        
+                        window.isQuantumShieldActive = false; // Reset status perisai
+                        window.pqSyncProgress = 0; // Reset bar ke 0
+                        
+                        // Reset visual telemetri
+                        let syncBar = document.getElementById('pq-sync-bar');
+                        let syncVal = document.getElementById('pq-sync-val');
+                        if (syncBar) { syncBar.style.width = "0%"; syncBar.style.background = "var(--aqua)"; syncBar.style.boxShadow = "none"; }
+                        if (syncVal) syncVal.textContent = "0";
+                        
+                        window.logAction(`🛡️ QUANTUM SHIELD BLOCKED! Enemy damage halved to ${dmg}!`, "system");
+                        window.spawnPopUp("SHIELD -50%", false, false);
+                    }
+                    // ------------------------------------
 
                     if (window.activeTrap) {
                         window.logAction(`Trap Card ${window.activeTrap.cardObj.name} TRIGGERED!`, "player"); window.activeTrap.el.classList.remove('set-down'); window.activeTrap.el.classList.add('flash-effect');
@@ -1771,6 +1818,47 @@ window.addEventListener('load', createHDFishes);
 
 // Jalankan mesin gelembung saat halaman dimuat
 window.addEventListener('load', createBubbles);
+
+
+// --- [MESIN UTAMA QUANTUM SHIELD: JANGAN DIHAPUS] ---
+window.pqSyncProgress = 0; 
+window.isQuantumShieldActive = false;
+
+window.triggerQuantumSync = function(cardType, rarity) {
+    let syncBar = document.getElementById('pq-sync-bar');
+    let syncVal = document.getElementById('pq-sync-val');
+    
+    let addedSync = 0;
+
+    // --- [LOGIKA PRIORITAS KELANGKAAN (LEGENDARY)] ---
+    if (rarity === "Legendary") {
+        addedSync = 40; // Jalur VIP: Infrastruktur kelas atas!
+    } else {
+        // Akselerasi standar: Spell +20%, Node +10%
+        addedSync = (cardType === 'spell') ? 20 : 10; 
+    }
+    // --------------------------------------------------
+
+    window.pqSyncProgress = Math.min(100, window.pqSyncProgress + addedSync);
+
+    // Update Visual Telemetri
+    if (syncBar) syncBar.style.width = window.pqSyncProgress + "%";
+    if (syncVal) syncVal.textContent = window.pqSyncProgress;
+
+    // Aktifkan Seamless Shield jika mencapai 100%
+    if (window.pqSyncProgress >= 100 && !window.isQuantumShieldActive) {
+        window.isQuantumShieldActive = true;
+        
+        if (syncBar) {
+            syncBar.style.background = "#00ff88"; // Hijau neon tanda aman
+            syncBar.style.boxShadow = "0 0 5px #00ff88"; // Efek menyala
+        }
+        
+        window.logAction("✅ MIGRATION 100%: Quantum Shield deployed! Next incoming damage will be halved.", "system");
+        window.spawnPopUp("QUANTUM SHIELD ONLINE", true, false);
+    }
+};
+
 </script>
 </body>
 </html>
