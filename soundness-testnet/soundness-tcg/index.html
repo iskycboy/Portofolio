@@ -34,21 +34,14 @@
     [ ] EXPAND
 </button>
 
-<!-- TUTORIAL MODAL (ENGLISH LOCALIZATION - ADDITIVE UPDATE) -->
-<div id="tutorial-modal">
-    <div class="tutorial-container">
-        <div class="tutorial-header">
-            <h2 class="tutorial-title">SYSTEM FIELD MANUAL</h2>
-            <p style="color:#aaa; margin: 5px 0 0 0; font-style:italic;">Soundness TCG - Combat Directives</p>
-        </div>
-        <div class="tutorial-content">
-            <!-- SEKSI 1: MISSION OBJECTIVE (Original) -->
+<div class="tutorial-content">
+            <!-- SEKSI 1: MISSION OBJECTIVE -->
             <div class="tut-section">
                 <h3>1. MISSION OBJECTIVE</h3>
                 <p>Breach enemy defenses and reduce their <span class="tut-keyword">System Integrity (HP)</span> to <span class="tut-damage">0</span>. You suffer a critical system failure (lose) if your HP reaches 0 or your Data Deck runs out of scripts (Fatigue).</p>
             </div>
             
-            <!-- SEKSI 2: DATA TYPES (Original) -->
+            <!-- SEKSI 2: DATA TYPES -->
             <div class="tut-section">
                 <h3>2. DATA TYPES (CARDS)</h3>
                 <p>• <span style="color:#00f2ff; font-weight:bold;">NODES (MONSTERS):</span> Primary combat units featuring ATK and DEF stats. Deployable in <span class="tut-keyword">ATTACK</span> (Vertical) or <span class="tut-keyword">DEFENSE</span> (Horizontal) mode.</p>
@@ -56,13 +49,13 @@
                 <p>• <span style="color:#ff44aa; font-weight:bold;">FIREWALLS (TRAPS):</span> Installed face-down. These defense mechanisms trigger automatically to intercept enemy attacks.</p>
             </div>
 
-            <!-- SEKSI 3: COMBAT PROTOCOL (Original) -->
+            <!-- SEKSI 3: COMBAT PROTOCOL -->
             <div class="tut-section">
                 <h3>3. COMBAT PROTOCOL</h3>
                 <p>During an attack, your Node's ATK clashes with the target's stats. If the target is in Attack mode, the weaker Node is terminated, and the ATK difference damages the owner's System Integrity. If the target is in Defense mode, its DEF absorbs the impact.</p>
             </div>
 
-            <!-- SEKSI BARU: MANUAL OVERRIDE (INJECTED) -->
+            <!-- SEKSI 4: MANUAL OVERRIDE -->
             <div class="tut-section" style="border-color: var(--gold); background: rgba(255,215,0,0.05);">
                 <h3 style="color:var(--gold);">4. MANUAL OVERRIDE (SWITCHING MODES)</h3>
                 <p>To change a Node's stance between Attack and Defense during <span class="tut-keyword">MAIN 1</span> or <span class="tut-keyword">MAIN 2</span>:</p>
@@ -71,7 +64,7 @@
                 <p>3. <span class="tut-keyword">SWITCH:</span> Press the gold/red <span class="tut-keyword">SWITCH</span> button to rotate your Node. (Limited to one change per turn per Node).</p>
             </div>
 
-            <!-- SEKSI 4 (Menjadi 5): EXECUTION PHASES (Original) -->
+            <!-- SEKSI 5: EXECUTION PHASES -->
             <div class="tut-section">
                 <h3>5. EXECUTION PHASES</h3>
                 <p>• <span class="tut-keyword">M1 (MAIN 1):</span> Deploy Nodes, execute Hacks, or install Firewalls.</p>
@@ -80,15 +73,34 @@
                 <p>• <span class="tut-keyword">END:</span> Terminate your session and yield terminal access.</p>
             </div>
 
-            <!-- SEKSI 5 (Menjadi 6): PQ-STACK TELEMETRY (Original) -->
+            <!-- SEKSI 6: PQ-STACK TELEMETRY -->
             <div class="tut-section">
                 <h3>6. PQ-STACK TELEMETRY</h3>
                 <p>The <span class="tut-keyword">Post-Quantum Stack</span> is your terminal's live cryptographic engine. Every action is validated using <span style="color:var(--gold); font-weight:bold;">Zero-Knowledge Proofs (ZKP)</span>. The rolling <span style="color:#00ff88;">[HASH]</span> guarantees that your combat data remains immutable.</p>
             </div>
+
+            <!-- SEKSI 7 BARU: RANK PROGRESSION & REWARDS -->
+            <div class="tut-section" style="border-color: #00ff88; background: rgba(0, 255, 136, 0.05);">
+                <h3 style="color:#00ff88;">7. RANK PROGRESSION & REWARDS</h3>
+                <p>Your combat efficiency is tracked through Campaign Mode. Ascend through the system tiers by accumulating 100 Rank Points (RP) per tier.</p>
+                
+                <p style="margin: 15px 0 5px 0;"><b>SYSTEM TIERS:</b></p>
+                <p style="font-size: 13px; line-height: 1.8; margin-top: 0;">
+                   <span style="color:#888; font-weight:bold;">ROOKIE</span> ➔ 
+                   <span style="color:#cd7f32; font-weight:bold;">BRONZE</span> ➔ 
+                   <span style="color:#c0c0c0; font-weight:bold;">SILVER</span> ➔ 
+                   <span style="color:#ffd700; font-weight:bold;">GOLD</span> ➔ 
+                   <span style="color:#e5e4e2; font-weight:bold;">PLATINUM</span> ➔ 
+                   <span style="color:#b9f2ff; font-weight:bold;">DIAMOND</span> ➔ 
+                   <span style="color:#ff00ff; font-weight:bold;">MASTER</span>
+                </p>
+                
+                <p style="margin-top: 15px; border-left: 2px solid var(--aqua); padding-left: 10px;">
+                   <span style="color:var(--aqua); font-weight:bold;">[!] REWARD PROTOCOL:</span><br>
+                   Every time you successfully breach a tier and <b>Rank Up</b>, the system will reward you with a random drop of <b>NEW CARDS</b> (including Legendary or Epic Nodes) to upgrade your Data Deck!
+                </p>
+            </div>
         </div>
-        <button id="btn-close-tutorial" class="btn-start" style="margin: 20px; background: #333; color: var(--aqua); border: 1px solid var(--aqua);">ACKNOWLEDGE & CLOSE</button>
-    </div>
-</div>
 
 <!-- LIVE PQ-STACK TELEMETRY -->
 <div id="pq-telemetry" class="pq-telemetry-box">
