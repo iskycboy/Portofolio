@@ -101,7 +101,6 @@ Before you begin, ensure you have met the following requirements:
 
 ## 👨‍💻 Author: Nurdin
 
-* Web3 Content Creator & Developer
 * Telkom University Purwokerto - Informatics Engineering
 
 ---
