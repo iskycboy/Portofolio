@@ -1,7 +1,3 @@
-# Build APK otomatis di GitHub — tanpa perlu Android Studio.
-# Cara pakai: unggah proyek ini ke repo GitHub, lalu buka tab
-# Actions -> "Build APK" -> Run workflow. APK hasil build muncul
-# sebagai artifact "kalender-keuntungan-debug-apk" di halaman run.
 name: Build APK
 
 on:
